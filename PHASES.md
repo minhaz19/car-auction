@@ -147,6 +147,37 @@
 
 ---
 
-## 🔜 Phase 5 — Dashboard & Seller Management (Up Next)
+---
 
-Seller listing creation/editing workflow, user bid history dashboard, active/won/lost auction status views, and listing management.
+## ✅ Phase 5 — Seller Flow + User Dashboard (Done)
+
+**Goal:** Watchlist management, real-time push notifications (`outbid`, `ending-soon`, `won`, `lost`), seller listing creation/management workflow, buyer dashboard, and self-serve role upgrade.
+
+### Backend (`apps/server`)
+- [x] `packages/shared/src/types/notification.ts` — `INotification`, `NotificationType`, `PaginatedNotificationsResponse` shared types
+- [x] `src/models/User.ts` — updated with `watchlist: [{ type: Schema.Types.ObjectId, ref: 'Car' }]`
+- [x] `src/models/Notification.ts` — Mongoose schema for notifications indexed on `{ userId: 1, createdAt: -1 }`
+- [x] `src/routes/users.ts` — Watchlist (`GET/POST/DELETE /api/users/me/watchlist`), Notifications (`GET/PATCH /api/users/me/notifications`), and Role upgrade (`PATCH /api/users/me/role`)
+- [x] `src/services/notificationCron.ts` — background interval service checking auctions ending in <5 mins (`ending-soon`) and newly closed auctions (`won`/`lost`)
+- [x] `src/routes/bids.ts` — creates `outbid` notification and emits `notification:new` to `user:<userId>` room when top bidder is dethroned
+
+### Frontend (`apps/web`)
+- [x] `src/store/services/usersApi.ts` — RTK Query service for watchlist, notifications, and role upgrade
+- [x] `src/components/ui/FormField.tsx`, `Select.tsx`, `ImageUploader.tsx` — reusable primitives for forms and image selection
+- [x] `src/components/shared/Navbar.tsx` — notification bell icon with unread badge, popover dropdown list, and real-time `notification:new` socket subscription
+- [x] `src/components/shared/AuctionPanel.tsx` — heart toggle button wired to `useAddToWatchlistMutation` / `useRemoveFromWatchlistMutation` with optimistic update
+- [x] `src/app/dashboard/page.tsx` — rebuilt Dashboard with tabs for **My Bids** (live, won, lost), **Watchlist**, **Notifications**, and **My Listings** (seller view)
+- [x] `src/app/dashboard/sell/page.tsx` — vehicle listing creation form with role check and self-serve upgrade prompt
+- [x] `src/app/dashboard/sell/[id]/page.tsx` — seller listing management detail view
+
+### Docs
+- [x] `API.md` — updated with user profile, watchlist, notification, and role endpoints
+- [x] `SOCKET_EVENTS.md` — updated with `notification:new` payload spec
+- [x] `DECISIONS.md` — documented Ending-Soon Interval vs Queue choice, Self-Serve Role Upgrade, and Image Upload Stub strategy
+- [x] `PHASES.md` — this file
+
+---
+
+## 🔜 Phase 6 — Stripe Payments & Winner Checkout (Up Next)
+
+Stripe Checkout integration, deposit hold on bid placement (optional), winner payment flow for winning bids, payment status tracking, and webhooks.

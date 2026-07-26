@@ -8,7 +8,9 @@ import authRouter from './routes/auth';
 import metaRouter from './routes/meta';
 import carsRouter from './routes/cars';
 import bidsRouter from './routes/bids';
+import usersRouter from './routes/users';
 import { initSocketServer } from './socket';
+import { startNotificationCron } from './services/notificationCron';
 
 const app: Application = express();
 const PORT = process.env.PORT || 5001;
@@ -54,6 +56,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
 app.use('/api/auth', authRouter);
 app.use('/api/meta', metaRouter);
 app.use('/api/cars', carsRouter);
+app.use('/api/users', usersRouter);
 app.use('/api', bidsRouter);
 
 // ─── Start ────────────────────────────────────────────────────────────────────
@@ -65,6 +68,9 @@ async function start() {
 
   // Connect to MongoDB after server is listening so HTTP is always reachable
   await connectDB();
+
+  // Start background notification cron runner
+  startNotificationCron();
 }
 
 start();

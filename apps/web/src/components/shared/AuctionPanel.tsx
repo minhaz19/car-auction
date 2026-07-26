@@ -5,6 +5,11 @@ import Link from 'next/link';
 import type { ICar } from '@car-auction/shared';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlaceBidMutation } from '@/store/services/carsApi';
+import {
+  useGetWatchlistQuery,
+  useAddToWatchlistMutation,
+  useRemoveFromWatchlistMutation,
+} from '@/store/services/usersApi';
 import { CountdownTimer } from './CountdownTimer';
 import { Gavel, Heart, AlertTriangle, CheckCircle2, Lock, Eye, WifiOff } from 'lucide-react';
 
@@ -30,13 +35,22 @@ export function AuctionPanel({
   const { isAuthenticated } = useAuth();
   const [placeBidMutation, { isLoading: isPlacingBid }] = usePlaceBidMutation();
 
+  // Watchlist queries & mutations
+  const { data: watchlistCars } = useGetWatchlistQuery(undefined, { skip: !isAuthenticated });
+  const [addToWatchlist] = useAddToWatchlistMutation();
+  const [removeFromWatchlist] = useRemoveFromWatchlistMutation();
+
+  const serverIsWatchlisted = Boolean(watchlistCars?.some((item) => item._id === car._id));
+  const [optimisticWatchlisted, setOptimisticWatchlisted] = useState<boolean | null>(null);
+
+  const isWatchlisted = optimisticWatchlisted !== null ? optimisticWatchlisted : serverIsWatchlisted;
+
   const minIncrement = Math.max(100, Math.round(car.currentBid * 0.01));
   const minRequiredBid = car.currentBid + minIncrement;
 
   const [bidInput, setBidInput] = useState<string>(String(minRequiredBid));
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
-  const [isWatchlisted, setIsWatchlisted] = useState<boolean>(false);
 
   const formattedCurrentBid = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -52,6 +66,22 @@ export function AuctionPanel({
 
   const effectiveAuctionEnd = latestAuctionEnd || car.auctionEnd;
   const isEnded = car.status === 'ended';
+
+  const handleToggleWatchlist = async () => {
+    if (!isAuthenticated) return;
+    const nextState = !isWatchlisted;
+    setOptimisticWatchlisted(nextState); // Optimistic UI update
+
+    try {
+      if (nextState) {
+        await addToWatchlist(car._id).unwrap();
+      } else {
+        await removeFromWatchlist(car._id).unwrap();
+      }
+    } catch {
+      setOptimisticWatchlisted(!nextState); // Rollback on error
+    }
+  };
 
   const handlePlaceBid = async (e: FormEvent) => {
     e.preventDefault();
@@ -117,20 +147,30 @@ export function AuctionPanel({
           )}
         </div>
 
-        {/* Watchlist Toggle Stub */}
-        <button
-          type="button"
-          onClick={() => setIsWatchlisted(!isWatchlisted)}
-          className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all ${
-            isWatchlisted
-              ? 'border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400'
-              : 'border-border bg-muted/50 text-muted-foreground hover:text-foreground'
-          }`}
-          title="Toggle Watchlist (Stub feature)"
-        >
-          <Heart className={`h-3.5 w-3.5 ${isWatchlisted ? 'fill-red-500 text-red-500' : ''}`} />
-          <span>{isWatchlisted ? 'Saved' : 'Watch'}</span>
-        </button>
+        {/* Watchlist Toggle Heart Button with Optimistic Updates */}
+        {isAuthenticated ? (
+          <button
+            type="button"
+            onClick={handleToggleWatchlist}
+            className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all ${
+              isWatchlisted
+                ? 'border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400'
+                : 'border-border bg-muted/50 text-muted-foreground hover:text-foreground'
+            }`}
+            title={isWatchlisted ? 'Remove from Watchlist' : 'Add to Watchlist'}
+          >
+            <Heart className={`h-3.5 w-3.5 ${isWatchlisted ? 'fill-red-500 text-red-500' : ''}`} />
+            <span>{isWatchlisted ? 'Saved' : 'Watch'}</span>
+          </button>
+        ) : (
+          <Link
+            href={`/auth/login?redirect=/car/${car._id}`}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Heart className="h-3.5 w-3.5" />
+            Watch
+          </Link>
+        )}
       </div>
 
       {/* Current Bid Display (ARIA Live Region for Accessibility) */}

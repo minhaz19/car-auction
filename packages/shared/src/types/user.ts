@@ -6,6 +6,7 @@ export interface IUserPublic {
   name: string;
   email: string;
   role: UserRole;
+  watchlist?: string[];
   createdAt: string;
 }
 

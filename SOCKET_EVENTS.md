@@ -122,3 +122,22 @@ Broadcast to all sockets in the `carId` room when the auction timer expires and 
   "serverTime": 1700000120000
 }
 ```
+
+---
+
+### `notification:new`
+Emitted directly to a specific user's private socket room (`user:<userId>`) when a new real-time alert is triggered (`outbid`, `ending-soon`, `won`, `lost`).
+
+**Payload**
+```json
+{
+  "_id": "60d5ec49f1b2c80015f8e4b0",
+  "userId": "60d5ec49f1b2c80015f8e400",
+  "type": "outbid",
+  "carId": "60d5ec49f1b2c80015f8e4a1",
+  "message": "You were outbid on 2022 Porsche 911 Carrera S! Current highest bid is now $129,000.",
+  "read": false,
+  "createdAt": "2024-01-01T00:05:00.000Z"
+}
+```
+

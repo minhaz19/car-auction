@@ -7,6 +7,7 @@ export interface IUser extends Document {
   passwordHash: string;
   role: UserRole;
   refreshTokens: string[];
+  watchlist: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,6 +40,10 @@ const UserSchema = new Schema<IUser>(
     },
     refreshTokens: {
       type: [String],
+      default: [],
+    },
+    watchlist: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'Car' }],
       default: [],
     },
   },

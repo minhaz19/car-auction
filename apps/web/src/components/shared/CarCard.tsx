@@ -10,16 +10,18 @@ interface CarCardProps {
 
 export function CarCard({ car }: CarCardProps) {
   const imageUrl = car.images?.[0] || 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d';
+  const bidAmount = car.currentBid ?? car.startingBid ?? 0;
 
   // Format currency
   const formattedBid = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0,
-  }).format(car.currentBid);
+  }).format(bidAmount);
 
   // Simple countdown string calculation for static presentation
-  const getTimeRemaining = (auctionEnd: string) => {
+  const getTimeRemaining = (auctionEnd?: string) => {
+    if (!auctionEnd) return 'Unknown';
     const end = new Date(auctionEnd).getTime();
     const now = new Date().getTime();
     const diff = end - now;
@@ -36,10 +38,10 @@ export function CarCard({ car }: CarCardProps) {
     return `${hours}h ${minutes}m left`;
   };
 
-  const endMs = new Date(car.auctionEnd).getTime();
-  const startMs = new Date(car.auctionStart).getTime();
+  const endMs = car.auctionEnd ? new Date(car.auctionEnd).getTime() : 0;
+  const startMs = car.auctionStart ? new Date(car.auctionStart).getTime() : 0;
   // Pure condition check
-  const isEndingSoon = car.status === 'live' && endMs - startMs < 48 * 60 * 60 * 1000;
+  const isEndingSoon = car.status === 'live' && endMs > 0 && startMs > 0 && endMs - startMs < 48 * 60 * 60 * 1000;
 
   return (
     <Link
@@ -51,17 +53,19 @@ export function CarCard({ car }: CarCardProps) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}
-          alt={`${car.year} ${car.make} ${car.model}`}
+          alt={`${car.year || ''} ${car.make || ''} ${car.model || ''}`}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
 
         {/* Condition Badge Top Left */}
-        <div className="absolute left-3 top-3">
-          <span className="rounded-lg bg-black/60 backdrop-blur border border-white/20 px-2.5 py-1 text-xs font-semibold text-white">
-            {car.condition}
-          </span>
-        </div>
+        {car.condition && (
+          <div className="absolute left-3 top-3">
+            <span className="rounded-lg bg-black/60 backdrop-blur border border-white/20 px-2.5 py-1 text-xs font-semibold text-white">
+              {car.condition}
+            </span>
+          </div>
+        )}
 
         {/* Status Pill Top Right */}
         <div className="absolute right-3 top-3 flex items-center gap-1.5">
@@ -88,10 +92,12 @@ export function CarCard({ car }: CarCardProps) {
         </div>
 
         {/* Floating Bid Count Bottom Right */}
-        <div className="absolute right-3 bottom-3 flex items-center gap-1 rounded-md bg-black/70 backdrop-blur px-2 py-0.5 text-xs text-white">
-          <Gavel className="h-3 w-3 text-amber-400" />
-          <span>{car.bidCount} bids</span>
-        </div>
+        {car.bidCount !== undefined && (
+          <div className="absolute right-3 bottom-3 flex items-center gap-1 rounded-md bg-black/70 backdrop-blur px-2 py-0.5 text-xs text-white">
+            <Gavel className="h-3 w-3 text-amber-400" />
+            <span>{car.bidCount} bids</span>
+          </div>
+        )}
       </div>
 
       {/* Details Body */}
@@ -106,15 +112,19 @@ export function CarCard({ car }: CarCardProps) {
         <div className="mb-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1">
             <Gauge className="h-3 w-3" />
-            {car.mileage.toLocaleString()} mi
+            {(car.mileage ?? 0).toLocaleString()} mi
           </span>
-          <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1">
-            <Fuel className="h-3 w-3" />
-            {car.fuelType}
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1">
-            {car.transmission}
-          </span>
+          {car.fuelType && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1">
+              <Fuel className="h-3 w-3" />
+              {car.fuelType}
+            </span>
+          )}
+          {car.transmission && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1">
+              {car.transmission}
+            </span>
+          )}
         </div>
 
         {/* Footer info: Bid & Countdown */}

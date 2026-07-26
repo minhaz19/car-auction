@@ -1,4 +1,5 @@
 import type { IBid } from './bid';
+import type { INotification } from './notification';
 
 export interface BidPlacedPayload {
   carId: string;
@@ -48,6 +49,7 @@ export interface ServerToClientEvents {
   'auction:ended': (payload: AuctionEndedPayload) => void;
   'presence:update': (payload: PresenceUpdatePayload) => void;
   'room:joined': (payload: RoomJoinedPayload) => void;
+  'notification:new': (notification: INotification) => void;
 }
 
 export interface ClientToServerEvents {

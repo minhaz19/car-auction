@@ -54,6 +54,11 @@ export function initSocketServer(httpServer: HttpServer) {
   });
 
   io.on('connection', (socket: TypedSocket) => {
+    // Join user private room for direct notifications if authenticated
+    if (socket.data.user?.sub) {
+      socket.join(`user:${socket.data.user.sub}`);
+    }
+
     // 1. Client joins a vehicle auction room
     socket.on('join:room', async ({ carId }) => {
       if (!carId) return;

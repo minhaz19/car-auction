@@ -2,6 +2,7 @@ import { Router, Request, Response, IRouter } from 'express';
 import mongoose from 'mongoose';
 import { Car } from '../models/Car';
 import { Bid } from '../models/Bid';
+import { Notification } from '../models/Notification';
 import { requireAuth } from '../middleware/auth';
 import { maskName } from '@car-auction/shared';
 import { getIO } from '../socket';
@@ -95,7 +96,33 @@ router.post('/cars/:id/bid', requireAuth, async (req: Request, res: Response): P
       return;
     }
 
-    // 4. Update status of previous active bids for this car to 'outbid'
+    // 4. Find previous active bid to notify outbid user
+    const previousActiveBid = await Bid.findOne({ carId, status: 'active' });
+    if (previousActiveBid && String(previousActiveBid.userId) !== req.user!.sub) {
+      const prevUserIdStr = String(previousActiveBid.userId);
+      const outbidNotif = await Notification.create({
+        userId: prevUserIdStr,
+        type: 'outbid',
+        carId,
+        message: `You were outbid on ${existingCar.year} ${existingCar.make} ${existingCar.model}! Current highest bid is now $${amount.toLocaleString()}.`,
+      });
+
+      try {
+        getIO().to(`user:${prevUserIdStr}`).emit('notification:new', {
+          _id: String(outbidNotif._id),
+          userId: prevUserIdStr,
+          type: outbidNotif.type,
+          carId,
+          message: outbidNotif.message,
+          read: outbidNotif.read,
+          createdAt: outbidNotif.createdAt.toISOString(),
+        });
+      } catch {
+        // Non-blocking if socket emit fails
+      }
+    }
+
+    // Update status of previous active bids for this car to 'outbid'
     await Bid.updateMany(
       { carId, status: 'active' },
       { $set: { status: 'outbid' } },
@@ -220,7 +247,7 @@ router.get('/users/me/bids', requireAuth, async (req: Request, res: Response): P
   try {
     const bids = await Bid.find({ userId: req.user!.sub })
       .sort({ createdAt: -1 })
-      .populate('carId', 'make model year images status currentBid auctionEnd');
+      .populate('carId');
 
     res.status(200).json(bids);
   } catch (error) {

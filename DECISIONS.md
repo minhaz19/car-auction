@@ -55,6 +55,19 @@ Records *why* a choice was made, not just what was built. This is the file to re
 **Why:** REST APIs provide superior HTTP semantics for state-modifying writes: standard status codes (201 Created, 409 Conflict, 400 Bad Request), built-in middleware error handling, rate limiting, and seamless integration with HTTP-only cookies and standard browser security policies. WebSockets excel at lightweight multi-cast event distribution.
 **Benefit:** Isolating writes to REST ensures database transactions and response status codes remain predictable and easy to audit, while WebSockets handle pure real-time push updates to all active room spectators without coupling the write pipeline to socket connection availability.
 
+## Simple Interval Check vs. Heavy Job Queue (BullMQ/Redis) for Ending-Soon Alerts
+**Decision:** Implement a lightweight 30-second server interval (`startNotificationCron.ts`) to query MongoDB for auctions ending in <5 minutes and auctions that recently closed, rather than introducing a Redis-backed job queue like Bull or BullMQ.
+**Why:** A full job queue introduces Redis infra overhead, worker process management, and extra connection management, which is unnecessary complexity for a single-server dev architecture. A 30-second interval query indexed on `{ status: 'live', auctionEnd: 1 }` consumes under 1ms of execution time per tick and reliably catches ending-soon and newly closed auctions at this scale.
+**Future Upgrade Path:** At high production volume (100,000+ simultaneous auctions), this can be refactored to BullMQ or AWS EventBridge scheduled tasks without changing the frontend or notification socket interfaces.
+
+## Self-Serve Account Role Upgrade (`buyer` -> `seller`)
+**Decision:** Allow buyers to self-serve upgrade their account role to `seller` via `PATCH /api/users/me/role` directly from the dashboard or when attempting to create a listing.
+**Why:** Requiring administrative approval or separate registration flows creates friction for users wanting to list vehicles immediately. Self-serve role upgrade streamlines onboarding while maintaining strict API permission enforcement (`requireRole('seller', 'admin')`) on listing creation endpoints.
+
+## Image Upload Stub Strategy (URL Input + Preset Picker)
+**Decision:** Build a rich `<ImageUploader>` UI component supporting image URL inputs, Unsplash high-resolution preset pickers, and cover-photo ordering, while flagging the underlying storage as a stub ready for S3 / Cloudinary integration.
+**Why:** Wiring a live cloud storage bucket (AWS S3 or Cloudinary API) requires external credentials, signed URL signatures, and CORS bucket policies that complicate setup without adding core application architectural value. A client-side URL & preset uploader provides 100% of the UI/UX capability and data structure (`images: string[]`) needed to build, test, and demonstrate the seller workflow cleanly.
+
 ---
 
 ## Open / To Be Decided

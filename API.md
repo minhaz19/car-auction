@@ -149,3 +149,60 @@ Returns current user's bids across all car auctions (populated with car details)
 
 **Response `200`**
 Array of `IBid` objects populated with car details.
+
+---
+
+## User Profile, Watchlist & Notifications — `/api/users`
+
+### `GET /api/users/me/watchlist`
+Returns user's saved watchlisted car listings.
+
+**Auth:** `Authorization: Bearer <accessToken>`
+
+---
+
+### `POST /api/users/me/watchlist/:carId`
+Adds vehicle to user's watchlist.
+
+**Auth:** `Authorization: Bearer <accessToken>`
+
+---
+
+### `DELETE /api/users/me/watchlist/:carId`
+Removes vehicle from user's watchlist.
+
+**Auth:** `Authorization: Bearer <accessToken>`
+
+---
+
+### `GET /api/users/me/notifications`
+Paginated user notifications (outbid, ending-soon, won, lost).
+
+**Auth:** `Authorization: Bearer <accessToken>`
+
+---
+
+### `PATCH /api/users/me/notifications/:id/read`
+Marks single notification as read.
+
+**Auth:** `Authorization: Bearer <accessToken>`
+
+---
+
+### `PATCH /api/users/me/notifications/read-all`
+Marks all user notifications as read.
+
+**Auth:** `Authorization: Bearer <accessToken>`
+
+---
+
+### `PATCH /api/users/me/role`
+Self-serve account role upgrade (`buyer` -> `seller`).
+
+**Auth:** `Authorization: Bearer <accessToken>`
+
+**Body**
+```json
+{ "role": "seller" }
+```
+
