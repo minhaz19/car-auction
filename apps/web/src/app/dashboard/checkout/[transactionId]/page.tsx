@@ -7,13 +7,25 @@ import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import { Navbar } from '@/components/shared/Navbar';
 import { Footer } from '@/components/shared/Footer';
-import { CheckoutForm } from '@/components/shared/CheckoutForm';
+import dynamic from 'next/dynamic';
 import {
   useGetTransactionQuery,
   useCreatePaymentIntentMutation,
 } from '@/store/services/transactionsApi';
 import type { ICar } from '@car-auction/shared';
 import { ArrowLeft, ShieldCheck, Trophy, Lock } from 'lucide-react';
+
+const CheckoutForm = dynamic(
+  () => import('@/components/shared/CheckoutForm').then((mod) => mod.CheckoutForm),
+  {
+    loading: () => (
+      <div className="rounded-3xl border border-border bg-card p-8 text-center space-y-3 animate-pulse">
+        <p className="text-sm text-muted-foreground font-bold">Loading secure payment element…</p>
+      </div>
+    ),
+    ssr: false,
+  },
+);
 
 export default function WinnerCheckoutPage({
   params,

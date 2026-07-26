@@ -1,20 +1,22 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { StoreProvider } from '@/providers/StoreProvider';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const inter = Inter({
+  variable: '--font-sans',
   subsets: ['latin'],
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const jetbrainsMono = JetBrains_Mono({
+  variable: '--font-mono',
   subsets: ['latin'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'RevBid — Live Car Auctions',
+  title: 'RevBid — Live Car Auctions & Real-Time Bidding',
   description:
     'Buy and sell cars through real-time live auctions. Place bids, track ending-soon listings, and win your next vehicle on RevBid.',
 };
@@ -25,8 +27,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+    <html
+      lang="en"
+      className={`${inter.variable} ${jetbrainsMono.variable} dark h-full font-sans antialiased`}
+    >
+      <body className="min-h-full flex flex-col bg-background text-foreground selection:bg-emerald-500 selection:text-black">
         <StoreProvider>{children}</StoreProvider>
       </body>
     </html>

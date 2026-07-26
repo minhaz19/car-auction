@@ -77,6 +77,14 @@ Records *why* a choice was made, not just what was built. This is the file to re
 **Decision:** Maintain seller payouts as a managed `payoutStatus` state field (`pending` / `initiated` / `completed`) updated asynchronously, rather than implementing full multi-party Stripe Connect OAuth onboarding and account payouts.
 **Why:** Stripe Connect requires verifying business tax IDs, bank account routing, and merchant identity verification (KYC), which adds external compliance setup without adding fundamental full-stack web application architecture value. A managed `payoutStatus` state field cleanly models the payment lifecycle for portfolio demonstration while documenting Stripe Connect as the designated enterprise production upgrade path.
 
+## Design System Architecture & Sofascore Live Sports-Ticker Inspiration
+**Decision:** Establish a cohesive dark theme (`#121212` background, `#10B981` Emerald accent, `#18181B` card containers) with sports-ticker inspired centerpiece visuals (64px+ JetBrains Mono current bid displays, pulsing emerald LIVE status badges, team-crest style vehicle inspection badges, and restrained ~200ms Framer Motion slide-fade entrance animations).
+**Why:** Live car auctions share the high-stakes, real-time urgency of live sports scoreboards (e.g. Sofascore / ESPN). Using high-contrast numeric display fonts (`JetBrains_Mono`) alongside clean UI sans-serif (`Inter`) makes critical numeric information readable at a glance across mobile and desktop devices without visual clutter.
+
+## Performance & Zero-FOUT Optimization via next/font & Code-Splitting
+**Decision:** Implement Next.js Google Fonts (`next/font/google`) for `Inter` and `JetBrains_Mono` with CSS variable injection, and dynamically code-split heavy client bundles (`CheckoutForm` / Stripe SDK) using `next/dynamic`.
+**Why:** Self-hosting Google Fonts via `next/font` eliminates Flash of Unstyled Text (FOUT) and layout shifts (CLS) by pre-calculating font metrics at build time. Code-splitting Stripe Elements ensures that main browsing pages (Home, Search, Auction Room) do not download heavy payment SDK javascript, maximizing initial page load speed and Lighthouse performance.
+
 ---
 
 ## Open / To Be Decided

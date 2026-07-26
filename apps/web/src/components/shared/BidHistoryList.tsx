@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useGetCarBidsQuery } from '@/store/services/carsApi';
 import { Gavel, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -23,10 +24,10 @@ export function BidHistoryList({ carId }: BidHistoryListProps) {
   };
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-6 space-y-4 shadow-sm">
+    <div className="rounded-3xl border border-border/80 bg-card p-6 space-y-4 shadow-sm">
       <div className="flex items-center justify-between border-b border-border pb-3">
         <div className="flex items-center gap-2 font-bold text-foreground text-base">
-          <Gavel className="h-4 w-4 text-primary" />
+          <Gavel className="h-4 w-4 text-emerald-400" />
           Bid History ({total})
         </div>
         <span className="text-xs text-muted-foreground font-medium">Live real-time stream</span>
@@ -35,71 +36,77 @@ export function BidHistoryList({ carId }: BidHistoryListProps) {
       {isLoading ? (
         <div className="space-y-3 py-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-10 rounded-xl bg-muted/50 animate-pulse" />
+            <div key={i} className="h-12 rounded-2xl bg-zinc-900 animate-pulse" />
           ))}
         </div>
       ) : bids.length === 0 ? (
-        <div className="py-8 text-center border border-dashed border-border rounded-2xl bg-muted/20">
+        <div className="py-8 text-center border border-dashed border-border rounded-2xl bg-zinc-900/30">
           <p className="text-xs text-muted-foreground">No bids have been placed on this auction yet.</p>
-          <p className="text-xs font-semibold text-primary mt-1">Be the first to place a bid!</p>
+          <p className="text-xs font-semibold text-emerald-400 mt-1">Be the first to place a bid!</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {bids.map((bid, idx) => {
-            const formattedAmount = new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              maximumFractionDigits: 0,
-            }).format(bid.amount);
+        <div className="space-y-2.5">
+          <AnimatePresence initial={false}>
+            {bids.map((bid, idx) => {
+              const formattedAmount = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                maximumFractionDigits: 0,
+              }).format(bid.amount);
 
-            const isHighest = idx === 0 && page === 1;
+              const isHighest = idx === 0 && page === 1;
 
-            return (
-              <div
-                key={bid._id}
-                className={`flex items-center justify-between rounded-2xl px-4 py-3 border transition-all duration-500 animate-in fade-in slide-in-from-top-2 ${
-                  isHighest
-                    ? 'border-emerald-500/40 bg-emerald-500/10 shadow-sm'
-                    : 'border-border/60 bg-background/50'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full font-bold text-xs ${
-                      isHighest
-                        ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {bid.maskedBidderName?.charAt(0) || 'B'}
+              return (
+                <motion.div
+                  key={bid._id}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  className={`flex items-center justify-between rounded-2xl px-4 py-3 border transition-colors ${
+                    isHighest
+                      ? 'border-emerald-500/40 bg-emerald-500/10 shadow-sm ring-1 ring-emerald-500/20'
+                      : 'border-border/60 bg-zinc-950/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-full font-bold text-xs ${
+                        isHighest
+                          ? 'bg-emerald-500 text-black font-extrabold'
+                          : 'bg-zinc-800 text-zinc-300'
+                      }`}
+                    >
+                      {bid.maskedBidderName?.charAt(0) || 'B'}
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-foreground block">
+                        {bid.maskedBidderName || 'B***r'}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {formatTime(bid.createdAt)}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-xs font-bold text-foreground block">
-                      {bid.maskedBidderName || 'B***r'}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">
-                      {formatTime(bid.createdAt)}
-                    </span>
-                  </div>
-                </div>
 
-                <div className="text-right">
-                  <span className="text-sm font-extrabold text-foreground block">
-                    {formattedAmount}
-                  </span>
-                  {isHighest ? (
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                      Highest Bidder
+                  <div className="text-right">
+                    <span className="text-sm font-mono font-extrabold text-foreground block">
+                      {formattedAmount}
                     </span>
-                  ) : (
-                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                      {bid.status}
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                    {isHighest ? (
+                      <span className="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider">
+                        Highest Bidder
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                        {bid.status}
+                      </span>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
       )}
 
@@ -114,7 +121,7 @@ export function BidHistoryList({ carId }: BidHistoryListProps) {
               type="button"
               disabled={page <= 1}
               onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-border p-1.5 hover:bg-muted disabled:opacity-40"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border border-border bg-zinc-900 text-zinc-300 hover:text-white disabled:opacity-40"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -122,7 +129,7 @@ export function BidHistoryList({ carId }: BidHistoryListProps) {
               type="button"
               disabled={page >= totalPages}
               onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-border p-1.5 hover:bg-muted disabled:opacity-40"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border border-border bg-zinc-900 text-zinc-300 hover:text-white disabled:opacity-40"
             >
               <ChevronRight className="h-4 w-4" />
             </button>

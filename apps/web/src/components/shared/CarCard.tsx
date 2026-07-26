@@ -40,28 +40,27 @@ export function CarCard({ car }: CarCardProps) {
 
   const endMs = car.auctionEnd ? new Date(car.auctionEnd).getTime() : 0;
   const startMs = car.auctionStart ? new Date(car.auctionStart).getTime() : 0;
-  // Pure condition check
   const isEndingSoon = car.status === 'live' && endMs > 0 && startMs > 0 && endMs - startMs < 48 * 60 * 60 * 1000;
 
   return (
     <Link
       href={`/car/${car._id}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+      className="group relative flex flex-col overflow-hidden rounded-3xl border border-border/80 bg-card shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:border-emerald-500/50"
     >
       {/* Image Banner */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-neutral-900">
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-zinc-950">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}
           alt={`${car.year || ''} ${car.make || ''} ${car.model || ''}`}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-transparent to-black/30" />
 
         {/* Condition Badge Top Left */}
         {car.condition && (
           <div className="absolute left-3 top-3">
-            <span className="rounded-lg bg-black/60 backdrop-blur border border-white/20 px-2.5 py-1 text-xs font-semibold text-white">
+            <span className="rounded-xl bg-zinc-950/80 backdrop-blur border border-white/10 px-3 py-1 text-[11px] font-bold text-white uppercase tracking-wider">
               {car.condition}
             </span>
           </div>
@@ -71,21 +70,21 @@ export function CarCard({ car }: CarCardProps) {
         <div className="absolute right-3 top-3 flex items-center gap-1.5">
           {car.status === 'live' && (
             <span
-              className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md ${
-                isEndingSoon ? 'bg-amber-600 animate-pulse' : 'bg-emerald-600'
+              className={`inline-flex items-center gap-1 rounded-xl px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-black shadow-lg ${
+                isEndingSoon ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
               }`}
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
-              {isEndingSoon ? 'Ending Soon' : 'Live Auction'}
+              <span className="h-1.5 w-1.5 rounded-full bg-black animate-ping" />
+              {isEndingSoon ? 'Ending Soon' : 'LIVE'}
             </span>
           )}
           {car.status === 'upcoming' && (
-            <span className="rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-white">
+            <span className="rounded-xl bg-blue-500 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-black">
               Upcoming
             </span>
           )}
           {car.status === 'ended' && (
-            <span className="rounded-lg bg-neutral-700 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-neutral-300">
+            <span className="rounded-xl bg-zinc-800 border border-zinc-700 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
               Ended
             </span>
           )}
@@ -93,52 +92,54 @@ export function CarCard({ car }: CarCardProps) {
 
         {/* Floating Bid Count Bottom Right */}
         {car.bidCount !== undefined && (
-          <div className="absolute right-3 bottom-3 flex items-center gap-1 rounded-md bg-black/70 backdrop-blur px-2 py-0.5 text-xs text-white">
-            <Gavel className="h-3 w-3 text-amber-400" />
+          <div className="absolute right-3 bottom-3 flex items-center gap-1.5 rounded-xl bg-zinc-950/80 backdrop-blur px-2.5 py-1 text-xs font-semibold text-white border border-white/10">
+            <Gavel className="h-3.5 w-3.5 text-emerald-400" />
             <span>{car.bidCount} bids</span>
           </div>
         )}
       </div>
 
       {/* Details Body */}
-      <div className="flex flex-1 flex-col p-5">
-        <div className="mb-2 flex items-baseline justify-between gap-2">
-          <h3 className="text-lg font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+      <div className="flex flex-1 flex-col p-5 space-y-3">
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="text-lg font-extrabold text-foreground line-clamp-1 group-hover:text-emerald-400 transition-colors">
             {car.year} {car.make} {car.model}
           </h3>
         </div>
 
         {/* Spec Pill Tags */}
-        <div className="mb-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1">
-            <Gauge className="h-3 w-3" />
+        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1 rounded-xl bg-zinc-900 border border-zinc-800 px-2.5 py-1">
+            <Gauge className="h-3.5 w-3.5 text-emerald-400" />
             {(car.mileage ?? 0).toLocaleString()} mi
           </span>
           {car.fuelType && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1">
-              <Fuel className="h-3 w-3" />
+            <span className="inline-flex items-center gap-1 rounded-xl bg-zinc-900 border border-zinc-800 px-2.5 py-1">
+              <Fuel className="h-3.5 w-3.5 text-emerald-400" />
               {car.fuelType}
             </span>
           )}
           {car.transmission && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1">
+            <span className="inline-flex items-center gap-1 rounded-xl bg-zinc-900 border border-zinc-800 px-2.5 py-1">
               {car.transmission}
             </span>
           )}
         </div>
 
         {/* Footer info: Bid & Countdown */}
-        <div className="mt-auto border-t border-border pt-4 flex items-center justify-between">
+        <div className="mt-auto border-t border-border/80 pt-4 flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
               {car.status === 'ended' ? 'Winning Bid' : 'Current Bid'}
             </p>
-            <p className="text-xl font-extrabold text-foreground tracking-tight">{formattedBid}</p>
+            <p className="text-xl font-mono font-extrabold text-emerald-400 tracking-tight">
+              {formattedBid}
+            </p>
           </div>
 
           <div className="text-right">
-            <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground justify-end">
-              <Clock className="h-3.5 w-3.5 text-primary" />
+            <div className="flex items-center gap-1 text-xs font-semibold text-zinc-300 justify-end">
+              <Clock className="h-3.5 w-3.5 text-emerald-400" />
               <span>{getTimeRemaining(car.auctionEnd)}</span>
             </div>
           </div>
