@@ -96,7 +96,10 @@ export function startNotificationCron() {
           winningBid.status = 'won';
           await winningBid.save();
 
-          const winnerId = String(winningBid.userId);
+          const winnerId =
+            typeof winningBid.userId === 'object' && winningBid.userId !== null && '_id' in winningBid.userId
+              ? String((winningBid.userId as { _id: unknown })._id)
+              : String(winningBid.userId);
 
           // Create Transaction record for payment checkout
           const transaction = await Transaction.create({
@@ -149,9 +152,15 @@ export function startNotificationCron() {
 
         // Notify other bidders that they lost
         const lostBids = await Bid.find({ carId: car._id, status: 'outbid' }).distinct('userId');
+        const winnerIdStr = winningBid
+          ? typeof winningBid.userId === 'object' && winningBid.userId !== null && '_id' in winningBid.userId
+            ? String((winningBid.userId as { _id: unknown })._id)
+            : String(winningBid.userId)
+          : '';
+
         for (const userId of lostBids) {
           const userIdStr = String(userId);
-          if (winningBid && userIdStr === String(winningBid.userId)) continue;
+          if (winnerIdStr && userIdStr === winnerIdStr) continue;
 
           const lostNotif = await Notification.create({
             userId: userIdStr,

@@ -2,6 +2,7 @@ import { Router, Request, Response, IRouter } from 'express';
 import mongoose from 'mongoose';
 import { Transaction } from '../models/Transaction';
 import { Car } from '../models/Car';
+import { Bid } from '../models/Bid';
 import { Notification } from '../models/Notification';
 import { requireAuth } from '../middleware/auth';
 import { stripe, STRIPE_PUBLISHABLE_KEY } from '../config/stripe';
@@ -13,6 +14,52 @@ const router: IRouter = Router();
 router.get('/me', requireAuth, async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.sub;
+
+    // Auto-create missing transactions for any ended auctions where user was highest bidder
+    const endedCars = await Car.find({ status: 'ended' });
+    for (const car of endedCars) {
+      const topBid = await Bid.findOne({ carId: car._id }).sort({ amount: -1 });
+      if (topBid) {
+        const topBidUserIdStr =
+          typeof topBid.userId === 'object' && topBid.userId !== null && '_id' in topBid.userId
+            ? String((topBid.userId as { _id: unknown })._id)
+            : String(topBid.userId);
+
+        if (topBidUserIdStr === userId) {
+          const existingTx = await Transaction.findOne({ carId: car._id });
+          if (!existingTx) {
+            const newTx = await Transaction.create({
+              carId: car._id,
+              buyerId: userId,
+              sellerId: car.sellerId,
+              amount: car.currentBid,
+              status: 'pending',
+              payoutStatus: 'pending',
+            });
+
+            try {
+              const paymentIntent = await stripe.paymentIntents.create({
+                amount: Math.round(car.currentBid * 100),
+                currency: 'usd',
+                metadata: {
+                  transactionId: String(newTx._id),
+                  carId: String(car._id),
+                  buyerId: userId,
+                },
+              });
+              newTx.stripePaymentIntentId = paymentIntent.id;
+              await newTx.save();
+            } catch {
+              // Dev mock fallback
+            }
+
+            topBid.status = 'won';
+            await topBid.save();
+          }
+        }
+      }
+    }
+
     const transactions = await Transaction.find({
       $or: [{ buyerId: userId }, { sellerId: userId }],
     })

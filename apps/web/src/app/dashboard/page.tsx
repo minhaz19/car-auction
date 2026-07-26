@@ -34,17 +34,17 @@ import {
 } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, accessToken, isLoading: isAuthLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<'bids' | 'watchlist' | 'notifications' | 'listings'>('bids');
 
-  // Queries
-  const { data: userBids = [], isLoading: bidsLoading } = useGetUserBidsQuery();
-  const { data: watchlistCars = [], isLoading: watchlistLoading } = useGetWatchlistQuery();
-  const { data: notifData, isLoading: notifLoading } = useGetNotificationsQuery();
-  const { data: userTransactions = [] } = useGetUserTransactionsQuery();
+  // Queries (skipped until session restoration produces accessToken)
+  const { data: userBids = [], isLoading: bidsLoading } = useGetUserBidsQuery(undefined, { skip: !accessToken });
+  const { data: watchlistCars = [], isLoading: watchlistLoading } = useGetWatchlistQuery(undefined, { skip: !accessToken });
+  const { data: notifData, isLoading: notifLoading } = useGetNotificationsQuery(undefined, { skip: !accessToken });
+  const { data: userTransactions = [] } = useGetUserTransactionsQuery(undefined, { skip: !accessToken });
   const { data: sellerCarsData } = useGetCarsQuery(
     { limit: 50 },
-    { skip: user?.role !== 'seller' && user?.role !== 'admin' },
+    { skip: !accessToken || (user?.role !== 'seller' && user?.role !== 'admin') },
   );
 
   // Mutations
@@ -66,6 +66,20 @@ export default function DashboardPage() {
   };
 
   const isSeller = user?.role === 'seller' || user?.role === 'admin';
+
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center">
+          <p className="text-sm text-muted-foreground animate-pulse font-medium">
+            Restoring your dashboard session…
+          </p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -206,16 +220,19 @@ export default function DashboardPage() {
 
                   // Find matching transaction for won bids
                   const matchingTx = userTransactions.find((tx) => {
-                    const txCarId = typeof tx.carId === 'object' ? tx.carId._id : tx.carId;
+                    if (!tx.carId) return false;
+                    const txCarId = typeof tx.carId === 'object' && tx.carId !== null ? (tx.carId as { _id: string })._id : tx.carId;
                     return String(txCarId) === String(carObj._id);
                   });
+
+                  const isWon = b.status === 'won' || (carObj.status === 'ended' && b.amount >= (carObj.currentBid || 0));
 
                   return (
                     <div key={b._id} className="relative group space-y-2">
                       <CarCard car={carObj} />
                       <div className="flex items-center justify-between px-2 text-xs font-bold">
                         <span className="text-muted-foreground">Your Bid: ${b.amount.toLocaleString()}</span>
-                        {b.status === 'won' ? (
+                        {isWon ? (
                           <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
                             <Trophy className="h-3.5 w-3.5" /> Won Auction
                           </span>
@@ -231,18 +248,22 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Checkout CTA for Won Auctions */}
-                      {b.status === 'won' && matchingTx && (
-                        matchingTx.status === 'paid' ? (
+                      {isWon && (
+                        matchingTx?.status === 'paid' ? (
                           <div className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                             <CheckCircle2 className="h-4 w-4" /> Paid & Confirmed
                           </div>
-                        ) : (
+                        ) : matchingTx ? (
                           <Link
                             href={`/dashboard/checkout/${matchingTx._id}`}
                             className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-white py-2 text-xs font-extrabold shadow-md hover:bg-emerald-700 transition-colors animate-pulse"
                           >
                             <CreditCard className="h-4 w-4" /> Payment Due — Complete Checkout
                           </Link>
+                        ) : (
+                          <div className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600/80 text-white py-2 text-xs font-extrabold shadow-md">
+                            <CreditCard className="h-4 w-4" /> Auction Won — Generating Checkout…
+                          </div>
                         )
                       )}
                     </div>
