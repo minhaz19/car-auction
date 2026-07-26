@@ -17,7 +17,10 @@ import {
   useMarkAllNotificationsReadMutation,
   useUpdateRoleMutation,
 } from '@/store/services/usersApi';
-import { useGetUserTransactionsQuery } from '@/store/services/transactionsApi';
+import {
+  useGetUserTransactionsQuery,
+} from '@/store/services/transactionsApi';
+import { Skeleton, CarCardSkeleton, DashboardBannerSkeleton } from '@/components/ui/Skeleton';
 import type { ICar } from '@car-auction/shared';
 import {
   Gavel,
@@ -69,12 +72,15 @@ export default function DashboardPage() {
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="min-h-screen flex flex-col bg-background text-foreground">
         <Navbar />
-        <main className="flex-1 flex items-center justify-center">
-          <p className="text-sm text-muted-foreground animate-pulse font-medium">
-            Restoring your dashboard session…
-          </p>
+        <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+          <DashboardBannerSkeleton />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <CarCardSkeleton />
+            <CarCardSkeleton />
+            <CarCardSkeleton />
+          </div>
         </main>
         <Footer />
       </div>
@@ -197,7 +203,11 @@ export default function DashboardPage() {
         {activeTab === 'bids' && (
           <div className="space-y-6">
             {bidsLoading ? (
-              <p className="text-sm text-muted-foreground animate-pulse">Loading your bids…</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <CarCardSkeleton />
+                <CarCardSkeleton />
+                <CarCardSkeleton />
+              </div>
             ) : userBids.length === 0 ? (
               <div className="rounded-3xl border border-dashed border-border bg-card p-12 text-center space-y-4">
                 <Gavel className="mx-auto h-10 w-10 text-muted-foreground/60" />
@@ -278,7 +288,11 @@ export default function DashboardPage() {
         {activeTab === 'watchlist' && (
           <div className="space-y-6">
             {watchlistLoading ? (
-              <p className="text-sm text-muted-foreground animate-pulse">Loading your watchlist…</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <CarCardSkeleton />
+                <CarCardSkeleton />
+                <CarCardSkeleton />
+              </div>
             ) : watchlistCars.length === 0 ? (
               <div className="rounded-3xl border border-dashed border-border bg-card p-12 text-center space-y-4">
                 <Heart className="mx-auto h-10 w-10 text-muted-foreground/60" />
@@ -321,7 +335,11 @@ export default function DashboardPage() {
             </div>
 
             {notifLoading ? (
-              <p className="text-sm text-muted-foreground animate-pulse py-4">Loading notifications…</p>
+              <div className="space-y-3 py-2">
+                <Skeleton className="h-16 w-full rounded-2xl" />
+                <Skeleton className="h-16 w-full rounded-2xl" />
+                <Skeleton className="h-16 w-full rounded-2xl" />
+              </div>
             ) : !notifData || notifData.notifications.length === 0 ? (
               <p className="text-sm text-muted-foreground py-8 text-center">No notifications found.</p>
             ) : (

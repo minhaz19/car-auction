@@ -6,6 +6,7 @@ import { Footer } from '@/components/shared/Footer';
 import { Carousel } from '@/components/shared/Carousel';
 import { QuickSearchPanel } from '@/components/shared/QuickSearchPanel';
 import { CarCard } from '@/components/shared/CarCard';
+import { CarCardSkeleton } from '@/components/ui/Skeleton';
 import { useGetFeaturedCarsQuery } from '@/store/services/carsApi';
 import { Flame, ArrowRight } from 'lucide-react';
 
@@ -50,10 +51,7 @@ export default function HomePage() {
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-80 rounded-2xl border border-border bg-card/60 animate-pulse"
-                />
+                <CarCardSkeleton key={i} />
               ))}
             </div>
           ) : featuredCars.length === 0 ? (

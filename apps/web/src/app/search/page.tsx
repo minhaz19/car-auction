@@ -7,6 +7,7 @@ import { Footer } from '@/components/shared/Footer';
 import { FilterSidebar } from '@/components/shared/FilterSidebar';
 import { FilterChip } from '@/components/shared/FilterChip';
 import { CarCard } from '@/components/shared/CarCard';
+import { CarCardSkeleton } from '@/components/ui/Skeleton';
 import { useGetCarsQuery } from '@/store/services/carsApi';
 import type {
   CarFilterParams,
@@ -184,10 +185,7 @@ function SearchContent() {
             {isLoading || isFetching ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-80 rounded-2xl border border-border bg-card/60 animate-pulse"
-                  />
+                  <CarCardSkeleton key={i} />
                 ))}
               </div>
             ) : cars.length === 0 ? (
