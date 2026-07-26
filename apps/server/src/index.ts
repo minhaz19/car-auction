@@ -9,6 +9,8 @@ import metaRouter from './routes/meta';
 import carsRouter from './routes/cars';
 import bidsRouter from './routes/bids';
 import usersRouter from './routes/users';
+import transactionsRouter from './routes/transactions';
+import webhooksRouter from './routes/webhooks';
 import { initSocketServer } from './socket';
 import { startNotificationCron } from './services/notificationCron';
 
@@ -18,6 +20,9 @@ const httpServer = http.createServer(app);
 
 // Initialize Socket.io real-time engine
 initSocketServer(httpServer);
+
+// ─── Webhook Mount (Raw body parsing BEFORE express.json()) ──────────────────
+app.use('/api/webhooks', webhooksRouter);
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(express.json());
@@ -57,6 +62,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/meta', metaRouter);
 app.use('/api/cars', carsRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/transactions', transactionsRouter);
 app.use('/api', bidsRouter);
 
 // ─── Start ────────────────────────────────────────────────────────────────────

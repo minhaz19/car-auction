@@ -2,6 +2,8 @@ import { Car } from '../models/Car';
 import { Bid } from '../models/Bid';
 import { User } from '../models/User';
 import { Notification } from '../models/Notification';
+import { Transaction } from '../models/Transaction';
+import { stripe } from '../config/stripe';
 import { getIO } from '../socket';
 
 // Track ending-soon notifications sent to prevent duplicate spam
@@ -48,7 +50,7 @@ export function startNotificationCron() {
           try {
             getIO().to(`user:${userId}`).emit('notification:new', {
               _id: String(notification._id),
-              userId: String(notification.userId),
+              userId,
               type: notification.type,
               carId: String(car._id),
               message: notification.message,
@@ -87,16 +89,47 @@ export function startNotificationCron() {
           .sort({ amount: -1 })
           .populate('userId', 'name');
 
-        if (winningBid) {
+        // Check reserve price constraint if set
+        const reserveMet = !car.reservePrice || car.currentBid >= car.reservePrice;
+
+        if (winningBid && reserveMet) {
           winningBid.status = 'won';
           await winningBid.save();
 
           const winnerId = String(winningBid.userId);
+
+          // Create Transaction record for payment checkout
+          const transaction = await Transaction.create({
+            carId: car._id,
+            buyerId: winnerId,
+            sellerId: car.sellerId,
+            amount: car.currentBid,
+            status: 'pending',
+            payoutStatus: 'pending',
+          });
+
+          // Attempt to create Stripe PaymentIntent
+          try {
+            const paymentIntent = await stripe.paymentIntents.create({
+              amount: Math.round(car.currentBid * 100),
+              currency: 'usd',
+              metadata: {
+                transactionId: String(transaction._id),
+                carId: String(car._id),
+                buyerId: winnerId,
+              },
+            });
+            transaction.stripePaymentIntentId = paymentIntent.id;
+            await transaction.save();
+          } catch {
+            // Non-blocking in dev if secret key missing
+          }
+
           const winnerNotif = await Notification.create({
             userId: winnerId,
             type: 'won',
             carId: car._id,
-            message: `Congratulations! You won the auction for ${car.year} ${car.make} ${car.model} with a final bid of $${car.currentBid.toLocaleString()}!`,
+            message: `Congratulations! You won the auction for ${car.year} ${car.make} ${car.model} with a bid of $${car.currentBid.toLocaleString()}! Complete your checkout to finalize purchase.`,
           });
 
           try {

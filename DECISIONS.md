@@ -68,6 +68,15 @@ Records *why* a choice was made, not just what was built. This is the file to re
 **Decision:** Build a rich `<ImageUploader>` UI component supporting image URL inputs, Unsplash high-resolution preset pickers, and cover-photo ordering, while flagging the underlying storage as a stub ready for S3 / Cloudinary integration.
 **Why:** Wiring a live cloud storage bucket (AWS S3 or Cloudinary API) requires external credentials, signed URL signatures, and CORS bucket policies that complicate setup without adding core application architectural value. A client-side URL & preset uploader provides 100% of the UI/UX capability and data structure (`images: string[]`) needed to build, test, and demonstrate the seller workflow cleanly.
 
+## Stripe Webhook as Authoritative Payment Source of Truth vs Client Confirmation
+**Decision:** Treat the cryptographic signature-verified Stripe webhook (`POST /api/webhooks/stripe` handling `payment_intent.succeeded`) as the sole authoritative trigger for setting Transaction status to `paid` and Car status to `sold`, while retaining the client-side confirmation endpoint (`POST /api/transactions/:id/confirm`) purely for optimistic UI responsiveness.
+**Why:** Client-side confirmation callbacks can be easily spoofed by malicious users manipulating browser HTTP requests or DevTools console calls (e.g. sending a fake `{ status: 'success' }` payload without actually transferring funds). Furthermore, if a buyer's browser crashes or network drops immediately after Stripe processes their credit card, the client callback will never fire, leaving the order stuck in pending despite money being collected.
+**Security Guarantee:** Stripe webhooks are signed using a shared HMAC secret (`STRIPE_WEBHOOK_SECRET`) and delivered directly from Stripe's servers to Express. Webhook signature verification guarantees the payment event cannot be forged, ensuring 100% financial transaction integrity.
+
+## Seller Payout Integration Stub Strategy (Stripe Connect Planned)
+**Decision:** Maintain seller payouts as a managed `payoutStatus` state field (`pending` / `initiated` / `completed`) updated asynchronously, rather than implementing full multi-party Stripe Connect OAuth onboarding and account payouts.
+**Why:** Stripe Connect requires verifying business tax IDs, bank account routing, and merchant identity verification (KYC), which adds external compliance setup without adding fundamental full-stack web application architecture value. A managed `payoutStatus` state field cleanly models the payment lifecycle for portfolio demonstration while documenting Stripe Connect as the designated enterprise production upgrade path.
+
 ---
 
 ## Open / To Be Decided

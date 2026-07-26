@@ -206,3 +206,55 @@ Self-serve account role upgrade (`buyer` -> `seller`).
 { "role": "seller" }
 ```
 
+---
+
+## Payments & Transactions — `/api/transactions`
+
+### `GET /api/transactions/me`
+Returns all transaction records where current user is buyer or seller.
+
+**Auth:** `Authorization: Bearer <accessToken>`
+
+---
+
+### `GET /api/transactions/:id`
+Returns single transaction details populated with car, buyer, and seller data.
+
+**Auth:** `Authorization: Bearer <accessToken>` (buyer, seller, or admin)
+
+---
+
+### `POST /api/transactions/:id/create-payment-intent`
+Generates or retrieves Stripe `PaymentIntent` client secret for Stripe Elements.
+
+**Auth:** `Authorization: Bearer <accessToken>` (buyer only)
+
+**Response `200`**
+```json
+{
+  "clientSecret": "pi_3M..._secret_...",
+  "stripePublishableKey": "pk_test_...",
+  "amount": 129000,
+  "status": "pending"
+}
+```
+
+---
+
+### `POST /api/transactions/:id/confirm`
+Client-side payment confirmation trigger for immediate UX responsiveness.
+
+**Auth:** `Authorization: Bearer <accessToken>` (buyer only)
+
+---
+
+## Webhooks — `/api/webhooks`
+
+### `POST /api/webhooks/stripe`
+Stripe signature-verified webhook endpoint for payment event processing.
+
+**Auth:** Signature header (`stripe-signature`)
+
+**Handled Events:** `payment_intent.succeeded` -> updates Transaction to `paid`, Car status to `sold`, and notifies seller.
+
+

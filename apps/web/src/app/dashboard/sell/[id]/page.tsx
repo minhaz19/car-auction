@@ -145,9 +145,9 @@ export default function SellerListingDetailPage({ params }: { params: Promise<{ 
             <span className="text-lg font-bold block text-foreground">{car.bidCount} bids</span>
           </div>
           <div className="rounded-2xl border border-border bg-card p-4 space-y-1">
-            <span className="text-xs text-muted-foreground font-medium">Reserve Price</span>
-            <span className="text-lg font-mono font-bold block text-foreground">
-              {car.reservePrice ? `$${car.reservePrice.toLocaleString()}` : 'No Reserve'}
+            <span className="text-xs text-muted-foreground font-medium">Payout Status</span>
+            <span className="text-xs font-bold block text-amber-600 dark:text-amber-300">
+              {car.status === 'ended' ? 'Payout processing — Stripe Connect planned' : 'Auction Live'}
             </span>
           </div>
         </div>

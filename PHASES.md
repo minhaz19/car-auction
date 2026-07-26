@@ -178,6 +178,33 @@
 
 ---
 
-## 🔜 Phase 6 — Stripe Payments & Winner Checkout (Up Next)
+## ✅ Phase 6 — Stripe Payments & Winner Checkout (Done)
 
-Stripe Checkout integration, deposit hold on bid placement (optional), winner payment flow for winning bids, payment status tracking, and webhooks.
+**Goal:** Post-auction winner checkout flow using Stripe test mode, Stripe Elements, PaymentIntent creation, signature-verified Stripe webhooks, and seller payout status tracking.
+
+### Backend (`apps/server`)
+- [x] `packages/shared/src/types/transaction.ts` — `ITransaction`, `TransactionStatus`, `PayoutStatus` shared types
+- [x] `src/models/Transaction.ts` — Mongoose Transaction schema indexed on `carId`, `buyerId`, `sellerId`, and `stripePaymentIntentId`
+- [x] `src/config/stripe.ts` — Stripe SDK initialization and configuration helper module
+- [x] `src/routes/transactions.ts` — `GET /api/transactions/:id`, `GET /api/transactions/me`, `POST /api/transactions/:id/create-payment-intent`, `POST /api/transactions/:id/confirm`
+- [x] `src/routes/webhooks.ts` — `POST /api/webhooks/stripe` signature-verified raw body handler processing `payment_intent.succeeded` events
+- [x] `src/services/notificationCron.ts` — creates `Transaction` and Stripe `PaymentIntent` when auction ends with winning bid
+
+### Frontend (`apps/web`)
+- [x] `@stripe/stripe-js` and `@stripe/react-stripe-js` installed
+- [x] `src/store/services/transactionsApi.ts` — RTK Query service for transactions and payment intents
+- [x] `src/components/shared/CheckoutForm.tsx` — reusable `<CheckoutForm>` component wrapping Stripe Elements `<PaymentElement>` with test card hint (`4242 4242 4242 4242`)
+- [x] `src/app/dashboard/checkout/[transactionId]/page.tsx` — Winner Checkout Page with vehicle order summary and Stripe Elements form
+- [x] `src/app/dashboard/page.tsx` — added "Payment Due — Complete Checkout" button/badge on won auctions
+- [x] `src/app/dashboard/sell/[id]/page.tsx` — added transaction payment status badge and payout processing status indicator
+
+### Docs
+- [x] `API.md` — updated with transactions and webhook endpoints
+- [x] `DECISIONS.md` — documented Stripe Webhook Source of Truth and Seller Payout Stub decisions
+- [x] `PHASES.md` — this file
+
+---
+
+## 🔜 Phase 7 — Design & Performance Polish (Up Next)
+
+UI/UX enhancements, dark mode / glassmorphism refinements, micro-animations, loading skeletons, responsive mobile optimizations, and lighthouse audit.

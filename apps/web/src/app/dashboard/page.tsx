@@ -17,6 +17,7 @@ import {
   useMarkAllNotificationsReadMutation,
   useUpdateRoleMutation,
 } from '@/store/services/usersApi';
+import { useGetUserTransactionsQuery } from '@/store/services/transactionsApi';
 import type { ICar } from '@car-auction/shared';
 import {
   Gavel,
@@ -29,6 +30,7 @@ import {
   Trophy,
   XCircle,
   Clock,
+  CreditCard,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -39,6 +41,7 @@ export default function DashboardPage() {
   const { data: userBids = [], isLoading: bidsLoading } = useGetUserBidsQuery();
   const { data: watchlistCars = [], isLoading: watchlistLoading } = useGetWatchlistQuery();
   const { data: notifData, isLoading: notifLoading } = useGetNotificationsQuery();
+  const { data: userTransactions = [] } = useGetUserTransactionsQuery();
   const { data: sellerCarsData } = useGetCarsQuery(
     { limit: 50 },
     { skip: user?.role !== 'seller' && user?.role !== 'admin' },
@@ -201,10 +204,16 @@ export default function DashboardPage() {
                   const carObj = b.carId as unknown as ICar;
                   if (!carObj || typeof carObj !== 'object') return null;
 
+                  // Find matching transaction for won bids
+                  const matchingTx = userTransactions.find((tx) => {
+                    const txCarId = typeof tx.carId === 'object' ? tx.carId._id : tx.carId;
+                    return String(txCarId) === String(carObj._id);
+                  });
+
                   return (
-                    <div key={b._id} className="relative group">
+                    <div key={b._id} className="relative group space-y-2">
                       <CarCard car={carObj} />
-                      <div className="mt-2 flex items-center justify-between px-2 text-xs font-bold">
+                      <div className="flex items-center justify-between px-2 text-xs font-bold">
                         <span className="text-muted-foreground">Your Bid: ${b.amount.toLocaleString()}</span>
                         {b.status === 'won' ? (
                           <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
@@ -220,6 +229,22 @@ export default function DashboardPage() {
                           </span>
                         )}
                       </div>
+
+                      {/* Checkout CTA for Won Auctions */}
+                      {b.status === 'won' && matchingTx && (
+                        matchingTx.status === 'paid' ? (
+                          <div className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                            <CheckCircle2 className="h-4 w-4" /> Paid & Confirmed
+                          </div>
+                        ) : (
+                          <Link
+                            href={`/dashboard/checkout/${matchingTx._id}`}
+                            className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-white py-2 text-xs font-extrabold shadow-md hover:bg-emerald-700 transition-colors animate-pulse"
+                          >
+                            <CreditCard className="h-4 w-4" /> Payment Due — Complete Checkout
+                          </Link>
+                        )
+                      )}
                     </div>
                   );
                 })}

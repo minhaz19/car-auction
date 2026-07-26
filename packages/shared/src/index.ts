@@ -5,3 +5,4 @@ export * from './types/car';
 export * from './types/bid';
 export * from './types/socket';
 export * from './types/notification';
+export * from './types/transaction';
