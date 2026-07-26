@@ -6,6 +6,7 @@ import { connectDB } from './db/connection';
 import authRouter from './routes/auth';
 import metaRouter from './routes/meta';
 import carsRouter from './routes/cars';
+import bidsRouter from './routes/bids';
 
 const app: Application = express();
 const PORT = process.env.PORT || 5001;
@@ -47,6 +48,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
 app.use('/api/auth', authRouter);
 app.use('/api/meta', metaRouter);
 app.use('/api/cars', carsRouter);
+app.use('/api', bidsRouter);
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 async function start() {

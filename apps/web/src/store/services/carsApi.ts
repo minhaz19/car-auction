@@ -1,6 +1,18 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import type { ICar, CarFilterParams, PaginatedCarsResponse } from '@car-auction/shared';
+import type {
+  ICar,
+  CarFilterParams,
+  PaginatedCarsResponse,
+  IBid,
+  PaginatedBidsResponse,
+} from '@car-auction/shared';
 import type { RootState } from '../index';
+
+export interface PlaceBidResponse {
+  message: string;
+  bid: IBid;
+  car: ICar;
+}
 
 export const carsApi = createApi({
   reducerPath: 'carsApi',
@@ -15,7 +27,7 @@ export const carsApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Car', 'FeaturedCars'],
+  tagTypes: ['Car', 'FeaturedCars', 'Bids', 'UserBids'],
   endpoints: (builder) => ({
     getFeaturedCars: builder.query<ICar[], void>({
       query: () => '/cars/featured',
@@ -44,6 +56,16 @@ export const carsApi = createApi({
     getCarById: builder.query<ICar, string>({
       query: (id) => `/cars/${id}`,
       providesTags: (_result, _error, id) => [{ type: 'Car', id }],
+    }),
+
+    getCarBids: builder.query<PaginatedBidsResponse, { id: string; page?: number; limit?: number }>({
+      query: ({ id, page = 1, limit = 10 }) => `/cars/${id}/bids?page=${page}&limit=${limit}`,
+      providesTags: (_result, _error, { id }) => [{ type: 'Bids', id }],
+    }),
+
+    getUserBids: builder.query<IBid[], void>({
+      query: () => '/users/me/bids',
+      providesTags: ['UserBids'],
     }),
 
     getBrands: builder.query<string[], void>({
@@ -87,6 +109,21 @@ export const carsApi = createApi({
         'FeaturedCars',
       ],
     }),
+
+    placeBid: builder.mutation<PlaceBidResponse, { carId: string; amount: number }>({
+      query: ({ carId, amount }) => ({
+        url: `/cars/${carId}/bid`,
+        method: 'POST',
+        body: { amount },
+      }),
+      invalidatesTags: (_result, _error, { carId }) => [
+        { type: 'Car', id: carId },
+        { type: 'Bids', id: carId },
+        { type: 'Car', id: 'LIST' },
+        'FeaturedCars',
+        'UserBids',
+      ],
+    }),
   }),
 });
 
@@ -94,9 +131,12 @@ export const {
   useGetFeaturedCarsQuery,
   useGetCarsQuery,
   useGetCarByIdQuery,
+  useGetCarBidsQuery,
+  useGetUserBidsQuery,
   useGetBrandsQuery,
   useGetModelsByBrandQuery,
   useCreateCarMutation,
   useUpdateCarMutation,
   useDeleteCarMutation,
+  usePlaceBidMutation,
 } = carsApi;

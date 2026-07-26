@@ -44,24 +44,8 @@ All cookie operations use `refreshToken` as the httpOnly cookie name, scoped to 
 ### `GET /api/meta/brands`
 Returns an array of available vehicle manufacturers/brands.
 
-**Auth:** None
-
-**Response `200`**
-```json
-["BMW", "Chevrolet", "Ford", "Mercedes-Benz", "Porsche", "Tesla", "Toyota"]
-```
-
----
-
 ### `GET /api/meta/models?brand={brandName}`
 Returns an array of models for the specified brand.
-
-**Auth:** None
-
-**Response `200`**
-```json
-["3 Series", "5 Series", "M3", "M4", "X5"]
-```
 
 ---
 
@@ -70,129 +54,98 @@ Returns an array of models for the specified brand.
 ### `GET /api/cars`
 Returns paginated, filtered, and sorted vehicle auction listings.
 
+### `GET /api/cars/featured`
+Returns top 6 live auctions closing soonest.
+
+### `GET /api/cars/:id`
+Returns single vehicle details by ID.
+
+### `POST /api/cars`
+Create a new car listing (seller/admin only).
+
+### `PATCH /api/cars/:id`
+Edit listing (seller/admin only, before first bid).
+
+### `DELETE /api/cars/:id`
+Cancel listing (seller/admin only, before first bid).
+
+---
+
+## Bidding — `/api/cars/:id/bid` & `/api/bids`
+
+### `POST /api/cars/:id/bid`
+Places a new bid on a live car auction. Guarantees concurrency safety via atomic conditional `findOneAndUpdate` on MongoDB.
+
+**Auth:** `Authorization: Bearer <accessToken>`
+
+**Body**
+```json
+{ "amount": 129000 }
+```
+
+- `amount`: Must exceed `currentBid` by at least the minimum increment ($100 or 1% of current bid).
+
+**Response `201`**
+```json
+{
+  "message": "Bid placed successfully!",
+  "bid": {
+    "_id": "60d5ec49f1b2c80015f8e4a9",
+    "carId": "60d5ec49f1b2c80015f8e4a1",
+    "amount": 129000,
+    "status": "active",
+    "maskedBidderName": "J***e",
+    "createdAt": "2024-01-01T00:05:00.000Z"
+  },
+  "car": { ... }
+}
+```
+
+**Errors**
+| Status | Reason |
+|---|---|
+| 400 | Invalid amount, below minimum increment, or auction ended |
+| 401 | Unauthenticated |
+| 409 | Outbid! Race condition lost (another bid landed first) |
+
+---
+
+### `GET /api/cars/:id/bids`
+Paginated bid history for a car, newest first. Masked bidder names returned for public privacy.
+
 **Auth:** None
 
 **Query Parameters**
 | Parameter | Type | Description |
 |---|---|---|
-| `condition` | string | `New`, `Used`, `Certified Pre-Owned` |
-| `make` | string | Vehicle brand name |
-| `model` | string | Vehicle model name |
-| `yearMin` | number | Minimum model year |
-| `yearMax` | number | Maximum model year |
-| `priceMin` | number | Minimum current bid price |
-| `priceMax` | number | Maximum current bid price |
-| `bodyType` | string | `Sedan`, `SUV`, `Truck`, `Coupe`, `Hatchback`, etc. |
-| `mileageMax` | number | Maximum odometer mileage |
-| `transmission` | string | `Automatic` or `Manual` |
-| `fuelType` | string | `Petrol`, `Diesel`, `Electric`, `Hybrid` |
-| `status` | string | `live`, `upcoming`, `ended` |
-| `sort` | string | `endingSoonest`, `priceAsc`, `priceDesc`, `mostBids`, `newest` |
 | `page` | number | Page number (default: 1) |
-| `limit` | number | Items per page (default: 9) |
+| `limit` | number | Items per page (default: 10) |
 
 **Response `200`**
 ```json
 {
-  "cars": [
+  "bids": [
     {
-      "_id": "60d5ec49f1b2c80015f8e4a1",
-      "sellerId": { "_id": "...", "name": "RevBid Official Seller", "email": "seller@revbid.dev" },
-      "make": "Porsche",
-      "model": "911 Carrera S",
-      "year": 2022,
-      "condition": "Used",
-      "bodyType": "Coupe",
-      "mileage": 6200,
-      "transmission": "Automatic",
-      "fuelType": "Petrol",
-      "color": "Guards Red",
-      "images": ["https://..."],
-      "description": "...",
-      "startingBid": 115000,
-      "currentBid": 128000,
-      "reservePrice": 126500,
-      "auctionStart": "2024-01-01T00:00:00.000Z",
-      "auctionEnd": "2024-01-08T00:00:00.000Z",
-      "status": "live",
-      "bidCount": 19,
-      "createdAt": "2024-01-01T00:00:00.000Z"
+      "_id": "60d5ec49f1b2c80015f8e4a9",
+      "carId": "60d5ec49f1b2c80015f8e4a1",
+      "amount": 129000,
+      "status": "active",
+      "maskedBidderName": "J***e",
+      "createdAt": "2024-01-01T00:05:00.000Z"
     }
   ],
-  "total": 35,
+  "total": 1,
   "page": 1,
-  "totalPages": 4
+  "totalPages": 1
 }
 ```
 
 ---
 
-### `GET /api/cars/featured`
-Returns top 6 live auctions closing soonest.
+### `GET /api/users/me/bids`
+Returns current user's bids across all car auctions (populated with car details).
 
-**Auth:** None
-
-**Response `200`**
-Array of 6 `ICar` objects.
-
----
-
-### `GET /api/cars/:id`
-Returns single vehicle details by ID.
-
-**Auth:** None
+**Auth:** `Authorization: Bearer <accessToken>`
 
 **Response `200`**
-Single `ICar` object populated with seller details.
-
----
-
-### `POST /api/cars`
-Create a new car listing.
-
-**Auth:** `Authorization: Bearer <accessToken>` (Role: `seller` or `admin`)
-
-**Body**
-```json
-{
-  "make": "BMW",
-  "model": "M4 Competition",
-  "year": 2023,
-  "condition": "Certified Pre-Owned",
-  "bodyType": "Coupe",
-  "mileage": 8500,
-  "transmission": "Automatic",
-  "fuelType": "Petrol",
-  "color": "Isle of Man Green",
-  "images": ["https://..."],
-  "description": "Mint condition M4 Competition with carbon package.",
-  "startingBid": 68000,
-  "reservePrice": 75000,
-  "auctionDurationDays": 7
-}
-```
-
-**Response `201`**
-Created `ICar` object.
-
----
-
-### `PATCH /api/cars/:id`
-Edit listing (allowed only if no bids have been placed yet and user is listing owner or admin).
-
-**Auth:** `Authorization: Bearer <accessToken>` (Role: `seller` or `admin`)
-
-**Response `200`**
-Updated `ICar` object.
-
----
-
-### `DELETE /api/cars/:id`
-Cancel/delete listing (allowed only if no bids have been placed yet and user is listing owner or admin).
-
-**Auth:** `Authorization: Bearer <accessToken>` (Role: `seller` or `admin`)
-
-**Response `200`**
-```json
-{ "message": "Listing cancelled successfully" }
-```
+Array of `IBid` objects populated with car details.

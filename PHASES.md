@@ -96,6 +96,32 @@
 
 ---
 
-## 🔜 Phase 3 — Real-Time Bidding & Concurrency (Up Next)
+## ✅ Phase 3 — Concurrency-Safe Bidding & Car Detail Auction Room (Done)
 
-Socket.io live auction room, optimistic locking / MongoDB transactions for race-condition safe bidding, anti-sniping auto-extend, and server-authoritative countdown timers.
+**Goal:** Bid model, atomic conditional `findOneAndUpdate` bid placement, bid history, RTK Query integration, and componentized Car Detail page.
+
+### Backend (`apps/server`)
+- [x] `packages/shared/src/types/bid.ts` — `IBid`, `BidStatus`, `PaginatedBidsResponse` shared types & `maskName()` helper
+- [x] `src/models/Bid.ts` — Mongoose schema for bids (`carId`, `userId`, `amount`, `status`) with compound index on `carId` and `createdAt`
+- [x] `src/routes/bids.ts` — `POST /api/cars/:id/bid` using atomic `Car.findOneAndUpdate({ currentBid: { $lt: amount }, status: 'live' })` to prevent race condition over-writes
+- [x] `src/routes/bids.ts` — Explicit error responses for 409 Outbid, 400 Below Minimum Increment, and 400 Auction Ended
+- [x] `src/routes/bids.ts` — `GET /api/cars/:id/bids` (paginated bid history with bidder names masked e.g. `J***e`) and `GET /api/users/me/bids` (current user's bid history)
+
+### Frontend (`apps/web`)
+- [x] `src/store/services/carsApi.ts` — extended with `getCarBids`, `getUserBids`, and `placeBid` endpoints with automatic cache tag invalidation
+- [x] `src/components/shared/ImageGallery.tsx` — main photo showcase with thumbnail selector
+- [x] `src/components/shared/SpecSheet.tsx` — vehicle specification grid, seller guarantee badge, and description
+- [x] `src/components/shared/AuctionPanel.tsx` — prominent current bid, minimum increment prompt, bid input, "Place Bid" button, error/outbid alert notifications, and watchlist heart toggle stub
+- [x] `src/components/shared/BidHistoryList.tsx` — paginated list displaying masked bidder names (`M***z`), amounts, status badges, and relative time
+- [x] `src/app/car/[id]/page.tsx` — assembled Car Detail Page layout
+
+### Docs
+- [x] `API.md` — updated with `POST /api/cars/:id/bid`, `GET /api/cars/:id/bids`, and `GET /api/users/me/bids` specs
+- [x] `DECISIONS.md` — documented atomic conditional `findOneAndUpdate` concurrency control approach
+- [x] `PHASES.md` — this file
+
+---
+
+## 🔜 Phase 4 — Real-Time Auctions & WebSockets (Up Next)
+
+Socket.io live auction room room connection, server broadcasts for new bids/extensions/ends, optimistic UI reconciliation, anti-sniping auto-extension logic (last 60s -> +2m), and server-authoritative countdown timers.
