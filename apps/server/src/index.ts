@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import http from 'http';
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -7,9 +8,14 @@ import authRouter from './routes/auth';
 import metaRouter from './routes/meta';
 import carsRouter from './routes/cars';
 import bidsRouter from './routes/bids';
+import { initSocketServer } from './socket';
 
 const app: Application = express();
 const PORT = process.env.PORT || 5001;
+const httpServer = http.createServer(app);
+
+// Initialize Socket.io real-time engine
+initSocketServer(httpServer);
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(express.json());
@@ -52,7 +58,7 @@ app.use('/api', bidsRouter);
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 async function start() {
-  app.listen(PORT, () => {
+  httpServer.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`   Health check: http://localhost:${PORT}/api/health`);
   });

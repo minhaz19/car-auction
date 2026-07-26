@@ -5,17 +5,31 @@ import Link from 'next/link';
 import type { ICar } from '@car-auction/shared';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlaceBidMutation } from '@/store/services/carsApi';
-import { Clock, Gavel, Heart, AlertTriangle, CheckCircle2, Lock } from 'lucide-react';
+import { CountdownTimer } from './CountdownTimer';
+import { Gavel, Heart, AlertTriangle, CheckCircle2, Lock, Eye, WifiOff } from 'lucide-react';
 
 interface AuctionPanelProps {
   car: ICar;
+  watcherCount?: number;
+  serverTimeOffset?: number;
+  isExtendedAlert?: boolean;
+  latestAuctionEnd?: string | null;
+  isConnected?: boolean;
+  isReconnecting?: boolean;
 }
 
-export function AuctionPanel({ car }: AuctionPanelProps) {
+export function AuctionPanel({
+  car,
+  watcherCount = 1,
+  serverTimeOffset = 0,
+  isExtendedAlert = false,
+  latestAuctionEnd,
+  isConnected = true,
+  isReconnecting = false,
+}: AuctionPanelProps) {
   const { isAuthenticated } = useAuth();
   const [placeBidMutation, { isLoading: isPlacingBid }] = usePlaceBidMutation();
 
-  // Minimum increment: $100 or 1% of current bid
   const minIncrement = Math.max(100, Math.round(car.currentBid * 0.01));
   const minRequiredBid = car.currentBid + minIncrement;
 
@@ -36,23 +50,8 @@ export function AuctionPanel({ car }: AuctionPanelProps) {
     maximumFractionDigits: 0,
   }).format(minRequiredBid);
 
-  // Time remaining string
-  const getTimeRemaining = (auctionEnd: string) => {
-    const end = new Date(auctionEnd).getTime();
-    const now = new Date().getTime();
-    const diff = end - now;
-
-    if (diff <= 0) return 'Ended';
-
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (hours > 24) {
-      const days = Math.floor(hours / 24);
-      return `${days}d ${hours % 24}h left`;
-    }
-    return `${hours}h ${minutes}m left`;
-  };
+  const effectiveAuctionEnd = latestAuctionEnd || car.auctionEnd;
+  const isEnded = car.status === 'ended';
 
   const handlePlaceBid = async (e: FormEvent) => {
     e.preventDefault();
@@ -68,7 +67,6 @@ export function AuctionPanel({ car }: AuctionPanelProps) {
     try {
       const res = await placeBidMutation({ carId: car._id, amount: numericAmount }).unwrap();
       setSuccessMsg(res.message || 'Bid placed successfully!');
-      // Update next suggested bid input
       const nextMin = res.car.currentBid + Math.max(100, Math.round(res.car.currentBid * 0.01));
       setBidInput(String(nextMin));
     } catch (err: unknown) {
@@ -86,11 +84,17 @@ export function AuctionPanel({ car }: AuctionPanelProps) {
     }
   };
 
-  const isEnded = car.status === 'ended';
-
   return (
     <div className="rounded-3xl border border-border bg-card p-6 space-y-6 shadow-xl sticky top-20">
-      {/* Top Bar: Live Status & Watchlist Heart Stub */}
+      {/* Socket Disconnection Reconnecting Banner */}
+      {isReconnecting && (
+        <div className="flex items-center gap-2 rounded-2xl bg-amber-500/15 border border-amber-500/30 p-3 text-xs text-amber-600 dark:text-amber-300 animate-pulse">
+          <WifiOff className="h-4 w-4 text-amber-500" />
+          <span>Reconnecting to live auction room…</span>
+        </div>
+      )}
+
+      {/* Top Bar: Live Status, Watcher Presence & Watchlist Heart */}
       <div className="flex items-center justify-between border-b border-border pb-4">
         <div className="flex items-center gap-2">
           {!isEnded ? (
@@ -101,6 +105,14 @@ export function AuctionPanel({ car }: AuctionPanelProps) {
           ) : (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-500/10 border border-neutral-500/30 px-3 py-1 text-xs font-bold text-neutral-500 uppercase tracking-wider">
               Auction Ended
+            </span>
+          )}
+
+          {/* Presence Indicator */}
+          {!isEnded && isConnected && (
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+              <Eye className="h-3.5 w-3.5 text-primary" />
+              <span>{watcherCount} watching</span>
             </span>
           )}
         </div>
@@ -121,8 +133,8 @@ export function AuctionPanel({ car }: AuctionPanelProps) {
         </button>
       </div>
 
-      {/* Current Bid Display */}
-      <div>
+      {/* Current Bid Display (ARIA Live Region for Accessibility) */}
+      <div aria-live="polite">
         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
           {isEnded ? 'Winning Bid' : 'Current Highest Bid'}
         </span>
@@ -134,19 +146,12 @@ export function AuctionPanel({ car }: AuctionPanelProps) {
         </p>
       </div>
 
-      {/* Countdown Box */}
-      <div className="rounded-2xl bg-muted/60 p-4 border border-border space-y-1">
-        <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <Clock className="h-4 w-4 text-primary" />
-            Time Remaining
-          </span>
-          <span className="text-xs font-normal">Server-authoritative</span>
-        </div>
-        <div className="text-lg font-mono font-bold text-foreground">
-          {getTimeRemaining(car.auctionEnd)}
-        </div>
-      </div>
+      {/* Real-time Server-Authoritative Countdown Timer */}
+      <CountdownTimer
+        auctionEnd={effectiveAuctionEnd}
+        serverTimeOffset={serverTimeOffset}
+        isExtendedAlert={isExtendedAlert}
+      />
 
       {/* Success Notification Alert */}
       {successMsg && (

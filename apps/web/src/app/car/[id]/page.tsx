@@ -9,11 +9,13 @@ import { SpecSheet } from '@/components/shared/SpecSheet';
 import { AuctionPanel } from '@/components/shared/AuctionPanel';
 import { BidHistoryList } from '@/components/shared/BidHistoryList';
 import { useGetCarByIdQuery } from '@/store/services/carsApi';
+import { useAuctionRoom } from '@/hooks/useAuctionRoom';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
 
 export default function CarDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { data: car, isLoading, isError } = useGetCarByIdQuery(id);
+  const auctionRoom = useAuctionRoom(id);
 
   if (isLoading) {
     return (
@@ -21,7 +23,7 @@ export default function CarDetailPage({ params }: { params: Promise<{ id: string
         <Navbar />
         <main className="flex-1 flex items-center justify-center">
           <p className="text-sm text-muted-foreground animate-pulse font-medium">
-            Loading vehicle auction details…
+            Loading vehicle auction room…
           </p>
         </main>
         <Footer />
@@ -106,9 +108,17 @@ export default function CarDetailPage({ params }: { params: Promise<{ id: string
             <BidHistoryList carId={car._id} />
           </div>
 
-          {/* Right Column: Sticky Auction Bidding Panel */}
+          {/* Right Column: Sticky Real-time Auction Bidding Panel */}
           <div className="lg:col-span-1">
-            <AuctionPanel car={car} />
+            <AuctionPanel
+              car={car}
+              watcherCount={auctionRoom.watcherCount}
+              serverTimeOffset={auctionRoom.serverTimeOffset}
+              isExtendedAlert={auctionRoom.isExtendedAlert}
+              latestAuctionEnd={auctionRoom.latestAuctionEnd}
+              isConnected={auctionRoom.isConnected}
+              isReconnecting={auctionRoom.isReconnecting}
+            />
           </div>
         </div>
       </main>

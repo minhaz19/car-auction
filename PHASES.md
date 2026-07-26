@@ -122,6 +122,31 @@
 
 ---
 
-## 🔜 Phase 4 — Real-Time Auctions & WebSockets (Up Next)
+## ✅ Phase 4 — Real-Time Auctions & WebSockets (Done)
 
-Socket.io live auction room room connection, server broadcasts for new bids/extensions/ends, optimistic UI reconciliation, anti-sniping auto-extension logic (last 60s -> +2m), and server-authoritative countdown timers.
+**Goal:** Socket.io room connections, live broadcasts (`bid:placed`, `auction:extended`, `presence:update`), anti-sniping auto-extension logic (+2m in last 60s), server-authoritative time sync, and RTK Query cache reconciliation.
+
+### Backend (`apps/server`)
+- [x] `packages/shared/src/types/socket.ts` — shared socket event and payload interfaces (`bid:placed`, `auction:extended`, `presence:update`, `room:joined`)
+- [x] `src/socket.ts` — Socket.io server instance attached to Express HTTP server with JWT handshake authentication, room subscription per `carId`, and presence tracking (`watcherCount`)
+- [x] `src/routes/bids.ts` — integrated anti-sniping auto-extend rule: if a bid lands in the last 60 seconds, `auctionEnd` is extended by 120 seconds (+2 minutes) and broadcast to room
+- [x] `src/routes/bids.ts` — broadcast `bid:placed` and `auction:extended` events via Socket.io on successful bid placement
+
+### Frontend (`apps/web`)
+- [x] `socket.io-client` installed and singleton instance configured in `src/lib/socket.ts`
+- [x] `src/hooks/useAuctionRoom.ts` — custom hook managing room subscription, presence tracking (`watcherCount`), connection status (`isReconnecting`), server-time-offset calculation, and RTK Query cache updates via `dispatch(carsApi.util.updateQueryData(...))`
+- [x] `src/components/shared/CountdownTimer.tsx` — server-authoritative countdown timer with offset calculation, pulsing highlight animation on anti-sniping extension, and `aria-live="polite"` region
+- [x] `src/components/shared/AuctionPanel.tsx` — updated with live presence indicator ("N people watching"), socket reconnection status banner, and live countdown timer
+- [x] `src/components/shared/BidHistoryList.tsx` — animated live entrance for new incoming bids
+- [x] `src/app/car/[id]/page.tsx` — wired to `useAuctionRoom` hook
+
+### Docs
+- [x] `SOCKET_EVENTS.md` — created comprehensive documentation for all WebSocket events
+- [x] `DECISIONS.md` — documented Server-Authoritative Time Offset and Separation of Write Path vs. Broadcast Path decisions
+- [x] `PHASES.md` — this file
+
+---
+
+## 🔜 Phase 5 — Dashboard & Seller Management (Up Next)
+
+Seller listing creation/editing workflow, user bid history dashboard, active/won/lost auction status views, and listing management.

@@ -45,6 +45,16 @@ Records *why* a choice was made, not just what was built. This is the file to re
 **How it prevents two people from winning the same bid:** MongoDB guarantees document-level lock atomicity on single-document operations. The query condition `currentBid: { $lt: newBidAmount }` acts as an optimistic lock at the database level. If Request A and Request B land concurrently with identical amounts $75,000, whichever request arrives at MongoDB first mutates `currentBid` to $75,000. When Request B's update query executes 2ms later, `currentBid: { $lt: 75000 }` evaluates to `false` because `currentBid` is now $75,000. The update matches 0 documents and returns `null`. Request B receives an immediate 409 Conflict ("Outbid! Another bidder placed $75,000 before your request arrived"), guaranteeing that exactly one bid wins cleanly.
 **Alternative considered:** Multi-document MongoDB ACID Transactions (`session.startTransaction()`) — rejected as unnecessary overhead for updating a single Car document state. Single-document conditional updates provide identical race-condition protection with significantly lower latency and database overhead.
 
+## Server-Authoritative Time Offset vs. Trusting Client Clocks
+**Decision:** Calculate a single time offset (`serverTime - localReceiptTime`) when joining a Socket.io room and compute local countdown timers using `Date.now() + offset`, rather than trusting the user's system clock or broadcasting a continuous 1-second server tick to all clients.
+**Why:** System clocks on client laptops/phones are notoriously inaccurate or can be intentionally manipulated by changing device date settings. Trusting client clocks would allow malicious users to spoof auction end times or place invalid late bids. Conversely, broadcasting a server timestamp interval tick every second to thousands of connected sockets creates immense CPU and network overhead on the server.
+**Solution:** The server sends an authoritative `serverTime` timestamp on room join and extension events. The client measures its local receipt timestamp, calculates the offset delta once, and counts down locally using the offset-adjusted time. This guarantees 100% clock tamper protection with zero recurring server broadcast overhead.
+
+## Separation of Write Path (REST API) vs. Broadcast Path (Socket.io)
+**Decision:** Bid submission requests execute via standard HTTP REST (`POST /api/cars/:id/bid`), while live updates (presence, new bids, anti-sniping extensions) are broadcast asynchronously via Socket.io.
+**Why:** REST APIs provide superior HTTP semantics for state-modifying writes: standard status codes (201 Created, 409 Conflict, 400 Bad Request), built-in middleware error handling, rate limiting, and seamless integration with HTTP-only cookies and standard browser security policies. WebSockets excel at lightweight multi-cast event distribution.
+**Benefit:** Isolating writes to REST ensures database transactions and response status codes remain predictable and easy to audit, while WebSockets handle pure real-time push updates to all active room spectators without coupling the write pipeline to socket connection availability.
+
 ---
 
 ## Open / To Be Decided

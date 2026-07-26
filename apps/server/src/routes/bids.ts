@@ -4,11 +4,12 @@ import { Car } from '../models/Car';
 import { Bid } from '../models/Bid';
 import { requireAuth } from '../middleware/auth';
 import { maskName } from '@car-auction/shared';
+import { getIO } from '../socket';
 
 const router: IRouter = Router();
 
 // ─── POST /api/cars/:id/bid ───────────────────────────────────────────────────
-// Concurrency-safe bid placement using MongoDB atomic findOneAndUpdate
+// Concurrency-safe bid placement + anti-sniping auto-extension + Socket.io broadcast
 router.post('/cars/:id/bid', requireAuth, async (req: Request, res: Response): Promise<void> => {
   try {
     const carId = req.params.id;
@@ -58,8 +59,7 @@ router.post('/cars/:id/bid', requireAuth, async (req: Request, res: Response): P
     }
 
     // 2. ATOMIC CONDITIONAL UPDATE — the race condition fix
-    // Only succeeds if currentBid in DB is STILL LESS than our new amount
-    const updatedCar = await Car.findOneAndUpdate(
+    let updatedCar = await Car.findOneAndUpdate(
       {
         _id: carId,
         currentBid: { $lt: amount },
@@ -109,14 +109,61 @@ router.post('/cars/:id/bid', requireAuth, async (req: Request, res: Response): P
       status: 'active',
     });
 
-    const populatedBid = await Bid.findById(newBid._id).populate('userId', 'name email');
+    // 6. ANTI-SNIPING RULE: If bid arrives in last 60 seconds, extend auctionEnd by +2 minutes
+    const timeRemainingMs = updatedCar.auctionEnd.getTime() - Date.now();
+    let wasExtended = false;
+
+    if (timeRemainingMs > 0 && timeRemainingMs < 60 * 1000) {
+      const extendedEnd = new Date(updatedCar.auctionEnd.getTime() + 120 * 1000);
+      const extendedResult = await Car.findOneAndUpdate(
+        { _id: carId },
+        { $set: { auctionEnd: extendedEnd } },
+        { new: true },
+      );
+      if (extendedResult) {
+        updatedCar = extendedResult;
+        wasExtended = true;
+      }
+    }
+
+    const formattedBid = {
+      _id: String(newBid._id),
+      carId: String(carId),
+      userId: String(req.user!.sub),
+      amount: newBid.amount,
+      status: newBid.status,
+      maskedBidderName: maskName(req.user!.name),
+      createdAt: newBid.createdAt.toISOString(),
+    };
+
+    // 7. REAL-TIME BROADCASTS VIA SOCKET.IO
+    try {
+      const io = getIO();
+
+      if (wasExtended) {
+        io.to(carId).emit('auction:extended', {
+          carId,
+          newAuctionEnd: updatedCar.auctionEnd.toISOString(),
+          extendedBySeconds: 120,
+          serverTime: Date.now(),
+        });
+      }
+
+      io.to(carId).emit('bid:placed', {
+        carId,
+        currentBid: updatedCar.currentBid,
+        bidCount: updatedCar.bidCount,
+        newBid: formattedBid,
+        auctionEnd: updatedCar.auctionEnd.toISOString(),
+        serverTime: Date.now(),
+      });
+    } catch {
+      // Non-blocking if socket broadcast fails
+    }
 
     res.status(201).json({
       message: 'Bid placed successfully!',
-      bid: {
-        ...populatedBid?.toObject(),
-        maskedBidderName: maskName(req.user!.name),
-      },
+      bid: formattedBid,
       car: updatedCar,
     });
   } catch (error) {

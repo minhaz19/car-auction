@@ -29,7 +29,7 @@ export function BidHistoryList({ carId }: BidHistoryListProps) {
           <Gavel className="h-4 w-4 text-primary" />
           Bid History ({total})
         </div>
-        <span className="text-xs text-muted-foreground font-medium">Newest first</span>
+        <span className="text-xs text-muted-foreground font-medium">Live real-time stream</span>
       </div>
 
       {isLoading ? (
@@ -57,9 +57,9 @@ export function BidHistoryList({ carId }: BidHistoryListProps) {
             return (
               <div
                 key={bid._id}
-                className={`flex items-center justify-between rounded-2xl px-4 py-3 border transition-colors ${
+                className={`flex items-center justify-between rounded-2xl px-4 py-3 border transition-all duration-500 animate-in fade-in slide-in-from-top-2 ${
                   isHighest
-                    ? 'border-emerald-500/30 bg-emerald-500/5'
+                    ? 'border-emerald-500/40 bg-emerald-500/10 shadow-sm'
                     : 'border-border/60 bg-background/50'
                 }`}
               >
