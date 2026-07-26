@@ -1,4 +1,4 @@
-// Shared types will be expanded in future phases.
-// e.g. Car, Bid, Transaction interfaces shared between web and server.
+// Shared types for RevBid Car Auction Platform
 
 export * from './types/user';
+export * from './types/car';

@@ -64,6 +64,38 @@
 
 ---
 
-## 🔜 Phase 2 — Car Listings (Up Next)
+## ✅ Phase 2 — Car Listings & Search (Done)
 
-Seller flow, search/filter, listing cards, `/search` page.
+**Goal:** Vehicle models, listings CRUD, brand-model metadata, seed data, Home Page, and Search Results Page.
+
+### Backend (`apps/server`)
+- [x] `packages/shared/src/types/car.ts` — `ICar`, `CarFilterParams`, `PaginatedCarsResponse` shared interfaces
+- [x] `src/models/Car.ts` — Mongoose schema for vehicle listings with indexing on make, model, year, status, currentBid, and auctionEnd
+- [x] `src/data/brandModels.ts` — static brand-to-model dictionary covering 15 manufacturers
+- [x] `src/routes/meta.ts` — `GET /api/meta/brands` & `GET /api/meta/models?brand=X`
+- [x] `src/routes/cars.ts` — CRUD routes: `GET /api/cars` (filtered/paginated/sorted), `GET /api/cars/featured` (6 featured live cars), `GET /api/cars/:id`, `POST /api/cars` (seller/admin), `PATCH /api/cars/:id`, `DELETE /api/cars/:id`
+- [x] `src/seed.ts` — database seed script creating default seller user and 35+ realistic car listings
+
+### Frontend (`apps/web`)
+- [x] `src/store/services/carsApi.ts` — RTK Query service for cars and metadata API endpoints
+- [x] `src/components/shared/Navbar.tsx` — responsive sticky header with logo, navigation links, user dropdown, and mobile drawer
+- [x] `src/components/shared/Footer.tsx` — site footer with quick links, support info, and newsletter form
+- [x] `src/components/shared/Carousel.tsx` — auto-rotating hero banner with sponsored partner slide
+- [x] `src/components/shared/QuickSearchPanel.tsx` — home page filter form with brand & dependent model dropdowns
+- [x] `src/components/shared/CarCard.tsx` — vehicle card with image, condition badge, status pill, mileage, bid info, and countdown timer placeholder
+- [x] `src/components/shared/FilterSidebar.tsx` — multi-filter sidebar for desktop and drawer for mobile
+- [x] `src/components/shared/FilterChip.tsx` — removable active search filter tags
+- [x] `src/app/page.tsx` — rich Home Page with Hero Carousel, Quick Search, Featured Cars grid, and How It Works section
+- [x] `src/app/search/page.tsx` — Search Results Page with URL parameter sync, active filter chips, sort dropdown, and paginated grid
+- [x] `src/app/car/[id]/page.tsx` — Vehicle Detail Page with photo gallery, seller notes, specs table, and current bid panel
+
+### Docs
+- [x] `API.md` — updated with `/api/meta` and `/api/cars` route specs
+- [x] `DECISIONS.md` — added entry for Static Brand → Model Mapping dataset choice
+- [x] `PHASES.md` — this file
+
+---
+
+## 🔜 Phase 3 — Real-Time Bidding & Concurrency (Up Next)
+
+Socket.io live auction room, optimistic locking / MongoDB transactions for race-condition safe bidding, anti-sniping auto-extend, and server-authoritative countdown timers.

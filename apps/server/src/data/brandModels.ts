@@ -1,0 +1,17 @@
+export const BRAND_MODELS: Record<string, string[]> = {
+  BMW: ['3 Series', '5 Series', '7 Series', 'M3', 'M4', 'M5', 'X3', 'X5', 'X7', 'i4', 'iX'],
+  Toyota: ['Camry', 'Corolla', 'RAV4', 'Highlander', 'Tacoma', 'Tundra', 'GR Supra', '4Runner', 'Land Cruiser'],
+  Tesla: ['Model 3', 'Model S', 'Model X', 'Model Y', 'Cybertruck', 'Roadster'],
+  Ford: ['Mustang', 'F-150', 'Bronco', 'Explorer', 'Mustang Mach-E', 'Raptor', 'GT'],
+  'Mercedes-Benz': ['C-Class', 'E-Class', 'S-Class', 'AMG GT', 'GLE', 'G-Class (G-Wagon)', 'EQS', 'SL Roadster'],
+  Audi: ['A4', 'A6', 'R8', 'RS6 Avant', 'e-tron GT', 'Q5', 'Q8', 'S5'],
+  Porsche: ['911 Carrera', '911 GT3', 'Taycan', 'Panamera', 'Cayenne', '718 Cayman', 'Macan'],
+  Chevrolet: ['Corvette Stingray', 'Corvette Z06', 'Camaro', 'Silverado', 'Tahoe', 'Suburban'],
+  Nissan: ['GT-R', 'Z', 'Altima', 'Rogue', 'Pathfinder', 'Armada', 'Frontier'],
+  Hyundai: ['IONIQ 5', 'IONIQ 6', 'Elantra N', 'Palisade', 'Tucson', 'Santa Cruz'],
+  Kia: ['EV6', 'EV9', 'Stinger', 'Telluride', 'Sportage', 'K5'],
+  Lexus: ['LC 500', 'LFA', 'RX 350', 'GX 550', 'IS 500', 'NX 350'],
+  Subaru: ['WRX', 'BRZ', 'Outback', 'Forester', 'Crosstrek'],
+  Volkswagen: ['Golf R', 'GTI', 'ID.4', 'Arteon', 'Atlas', 'Tiguan'],
+  Dodge: ['Challenger Hellcat', 'Charger SRT', 'Durango SRT', 'Viper'],
+};

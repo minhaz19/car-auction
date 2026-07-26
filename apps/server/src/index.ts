@@ -4,6 +4,8 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { connectDB } from './db/connection';
 import authRouter from './routes/auth';
+import metaRouter from './routes/meta';
+import carsRouter from './routes/cars';
 
 const app: Application = express();
 const PORT = process.env.PORT || 5001;
@@ -43,6 +45,8 @@ app.get('/api/health', (_req: Request, res: Response) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/meta', metaRouter);
+app.use('/api/cars', carsRouter);
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 async function start() {

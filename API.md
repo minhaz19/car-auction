@@ -22,131 +22,177 @@ No auth required.
 
 All cookie operations use `refreshToken` as the httpOnly cookie name, scoped to `/api/auth`.
 
----
-
 ### `POST /api/auth/register`
-Create a new account.
-
 **Auth:** None
-
-**Body**
-```json
-{ "name": "Jane Doe", "email": "jane@example.com", "password": "Password1!" }
-```
-
-- `password`: min 8 chars, must contain at least one number
-
-**Response `201`**
-```json
-{
-  "accessToken": "<jwt>",
-  "user": { "_id": "...", "name": "Jane Doe", "email": "jane@example.com", "role": "buyer" }
-}
-```
-Sets `refreshToken` httpOnly cookie.
-
-**Errors**
-| Status | Reason |
-|---|---|
-| 400 | Missing fields or weak password |
-| 409 | Email already registered |
-
----
 
 ### `POST /api/auth/login`
-Authenticate an existing user.
+**Auth:** None
+
+### `POST /api/auth/refresh`
+**Auth:** `refreshToken` httpOnly cookie (automatic)
+
+### `POST /api/auth/logout`
+**Auth:** `Authorization: Bearer <accessToken>` + `refreshToken` cookie
+
+### `POST /api/auth/logout-all`
+**Auth:** `Authorization: Bearer <accessToken>`
+
+---
+
+## Metadata — `/api/meta`
+
+### `GET /api/meta/brands`
+Returns an array of available vehicle manufacturers/brands.
 
 **Auth:** None
 
+**Response `200`**
+```json
+["BMW", "Chevrolet", "Ford", "Mercedes-Benz", "Porsche", "Tesla", "Toyota"]
+```
+
+---
+
+### `GET /api/meta/models?brand={brandName}`
+Returns an array of models for the specified brand.
+
+**Auth:** None
+
+**Response `200`**
+```json
+["3 Series", "5 Series", "M3", "M4", "X5"]
+```
+
+---
+
+## Car Listings — `/api/cars`
+
+### `GET /api/cars`
+Returns paginated, filtered, and sorted vehicle auction listings.
+
+**Auth:** None
+
+**Query Parameters**
+| Parameter | Type | Description |
+|---|---|---|
+| `condition` | string | `New`, `Used`, `Certified Pre-Owned` |
+| `make` | string | Vehicle brand name |
+| `model` | string | Vehicle model name |
+| `yearMin` | number | Minimum model year |
+| `yearMax` | number | Maximum model year |
+| `priceMin` | number | Minimum current bid price |
+| `priceMax` | number | Maximum current bid price |
+| `bodyType` | string | `Sedan`, `SUV`, `Truck`, `Coupe`, `Hatchback`, etc. |
+| `mileageMax` | number | Maximum odometer mileage |
+| `transmission` | string | `Automatic` or `Manual` |
+| `fuelType` | string | `Petrol`, `Diesel`, `Electric`, `Hybrid` |
+| `status` | string | `live`, `upcoming`, `ended` |
+| `sort` | string | `endingSoonest`, `priceAsc`, `priceDesc`, `mostBids`, `newest` |
+| `page` | number | Page number (default: 1) |
+| `limit` | number | Items per page (default: 9) |
+
+**Response `200`**
+```json
+{
+  "cars": [
+    {
+      "_id": "60d5ec49f1b2c80015f8e4a1",
+      "sellerId": { "_id": "...", "name": "RevBid Official Seller", "email": "seller@revbid.dev" },
+      "make": "Porsche",
+      "model": "911 Carrera S",
+      "year": 2022,
+      "condition": "Used",
+      "bodyType": "Coupe",
+      "mileage": 6200,
+      "transmission": "Automatic",
+      "fuelType": "Petrol",
+      "color": "Guards Red",
+      "images": ["https://..."],
+      "description": "...",
+      "startingBid": 115000,
+      "currentBid": 128000,
+      "reservePrice": 126500,
+      "auctionStart": "2024-01-01T00:00:00.000Z",
+      "auctionEnd": "2024-01-08T00:00:00.000Z",
+      "status": "live",
+      "bidCount": 19,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "total": 35,
+  "page": 1,
+  "totalPages": 4
+}
+```
+
+---
+
+### `GET /api/cars/featured`
+Returns top 6 live auctions closing soonest.
+
+**Auth:** None
+
+**Response `200`**
+Array of 6 `ICar` objects.
+
+---
+
+### `GET /api/cars/:id`
+Returns single vehicle details by ID.
+
+**Auth:** None
+
+**Response `200`**
+Single `ICar` object populated with seller details.
+
+---
+
+### `POST /api/cars`
+Create a new car listing.
+
+**Auth:** `Authorization: Bearer <accessToken>` (Role: `seller` or `admin`)
+
 **Body**
 ```json
-{ "email": "jane@example.com", "password": "Password1!" }
-```
-
-**Response `200`**
-```json
 {
-  "accessToken": "<jwt>",
-  "user": { "_id": "...", "name": "Jane Doe", "email": "jane@example.com", "role": "buyer" }
-}
-```
-Sets/rotates `refreshToken` httpOnly cookie.
-
-**Errors**
-| Status | Reason |
-|---|---|
-| 400 | Missing fields |
-| 401 | Invalid email or password |
-
----
-
-### `POST /api/auth/refresh`
-Exchange the refresh token cookie for a new access token. **Rotates** the refresh token on every call.
-
-**Auth:** `refreshToken` httpOnly cookie (automatic)
-
-**Body:** None
-
-**Response `200`**
-```json
-{
-  "accessToken": "<new-jwt>",
-  "user": { "_id": "...", "name": "Jane Doe", "email": "jane@example.com", "role": "buyer" }
-}
-```
-Sets new `refreshToken` cookie. Old token is invalidated.
-
-**Errors**
-| Status | Reason |
-|---|---|
-| 401 | No cookie, expired/invalid token, or reuse detected (all sessions revoked on reuse) |
-
----
-
-### `POST /api/auth/logout`
-Invalidate the current session's refresh token.
-
-**Auth:** `Authorization: Bearer <accessToken>` + `refreshToken` cookie
-
-**Body:** None
-
-**Response `200`**
-```json
-{ "message": "Logged out successfully" }
-```
-Clears `refreshToken` cookie.
-
----
-
-### `POST /api/auth/logout-all`
-Revoke all refresh tokens for the user (all-device logout).
-
-**Auth:** `Authorization: Bearer <accessToken>`
-
-**Body:** None
-
-**Response `200`**
-```json
-{ "message": "Logged out from all devices" }
-```
-Clears `refreshToken` cookie.
-
----
-
-## Access Token Format
-
-Access tokens are **HS256 JWTs** with a 15-minute expiry.
-
-**Payload**
-```json
-{
-  "sub": "<userId>",
-  "name": "Jane Doe",
-  "email": "jane@example.com",
-  "role": "buyer",
-  "iat": 1700000000,
-  "exp": 1700000900
+  "make": "BMW",
+  "model": "M4 Competition",
+  "year": 2023,
+  "condition": "Certified Pre-Owned",
+  "bodyType": "Coupe",
+  "mileage": 8500,
+  "transmission": "Automatic",
+  "fuelType": "Petrol",
+  "color": "Isle of Man Green",
+  "images": ["https://..."],
+  "description": "Mint condition M4 Competition with carbon package.",
+  "startingBid": 68000,
+  "reservePrice": 75000,
+  "auctionDurationDays": 7
 }
 ```
 
-Send as: `Authorization: Bearer <token>`
+**Response `201`**
+Created `ICar` object.
+
+---
+
+### `PATCH /api/cars/:id`
+Edit listing (allowed only if no bids have been placed yet and user is listing owner or admin).
+
+**Auth:** `Authorization: Bearer <accessToken>` (Role: `seller` or `admin`)
+
+**Response `200`**
+Updated `ICar` object.
+
+---
+
+### `DELETE /api/cars/:id`
+Cancel/delete listing (allowed only if no bids have been placed yet and user is listing owner or admin).
+
+**Auth:** `Authorization: Bearer <accessToken>` (Role: `seller` or `admin`)
+
+**Response `200`**
+```json
+{ "message": "Listing cancelled successfully" }
+```

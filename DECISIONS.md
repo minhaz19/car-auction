@@ -34,6 +34,11 @@ Records *why* a choice was made, not just what was built. This is the file to re
 **Decision:** All UI built as small, reusable components under `components/ui` (primitives: Button, Card, Badge, etc.) and `components/shared` (composed, project-specific: FilterChip, CountdownTimer, CarCard), rather than one-off inline JSX per page.
 **Why:** Multiple pages (home, search, car detail, dashboard) reuse the same visual elements (car cards, filters, badges). A shared component library keeps styling consistent and makes future phases (real-time updates, design polish) faster since changes propagate from one place.
 
+## Static Brand → Model Mapping dataset
+**Decision:** Store brand-to-model relationships in a static JSON/TypeScript module (`brandModels.ts`) exposed via `/api/meta/brands` and `/api/meta/models?brand=X`, rather than querying a separate database collection or fetching an external 3rd-party API.
+**Why:** Car makes and models change infrequently. A curated static dataset of 15 popular brands and 100+ models ensures instant API responses, zero database query latency, and reliable dependent dropdown behavior without API rate limits or external service dependencies during development.
+**Trade-off / Future Swap:** In a full enterprise production system, this could be swapped for a dedicated Vehicle DB service (like NHTSA VPIC API or CarQuery API) or a MongoDB `makes_models` reference collection. The current frontend RTK Query interface (`getBrands`, `getModelsByBrand`) abstracts this source, allowing a seamless swap without frontend changes.
+
 ---
 
 ## Open / To Be Decided
