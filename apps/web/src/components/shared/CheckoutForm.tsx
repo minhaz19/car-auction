@@ -35,7 +35,6 @@ export function CheckoutForm({ transactionId, amount, onSuccess }: CheckoutFormP
     setErrorMessage('');
 
     if (!stripe || !elements) {
-      // Fallback if Stripe JS hasn't finished loading or in mock mode
       setIsProcessing(true);
       try {
         await confirmPaymentMutation(transactionId).unwrap();
@@ -64,13 +63,11 @@ export function CheckoutForm({ transactionId, amount, onSuccess }: CheckoutFormP
         setErrorMessage(error.message || 'An error occurred during payment processing.');
         setIsProcessing(false);
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        // Call server confirmation endpoint to trigger fallback updates
         await confirmPaymentMutation(transactionId).unwrap();
         setIsPaidSuccess(true);
         setIsProcessing(false);
         onSuccess();
       } else {
-        // Fallback confirmation
         await confirmPaymentMutation(transactionId).unwrap();
         setIsPaidSuccess(true);
         setIsProcessing(false);
@@ -142,6 +139,82 @@ export function CheckoutForm({ transactionId, amount, onSuccess }: CheckoutFormP
       >
         <CreditCard className="h-5 w-5" />
         {isProcessing ? 'Processing Payment…' : `Pay ${formattedAmount} Now`}
+      </button>
+    </form>
+  );
+}
+
+export function FallbackCheckoutForm({ transactionId, amount, onSuccess }: CheckoutFormProps) {
+  const [confirmPaymentMutation] = useConfirmPaymentMutation();
+
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isPaidSuccess, setIsPaidSuccess] = useState(false);
+
+  const formattedAmount = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(amount);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+    setIsProcessing(true);
+
+    try {
+      await confirmPaymentMutation(transactionId).unwrap();
+      setIsPaidSuccess(true);
+      setIsProcessing(false);
+      onSuccess();
+    } catch (err: unknown) {
+      setIsProcessing(false);
+      setErrorMessage((err as { data?: { message?: string } })?.data?.message || 'Failed to complete payment.');
+    }
+  };
+
+  if (isPaidSuccess) {
+    return (
+      <div className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center space-y-4">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white">
+          <CheckCircle2 className="h-8 w-8" />
+        </div>
+        <h3 className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+          Payment Confirmed!
+        </h3>
+        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+          Your payment of <strong className="text-foreground">{formattedAmount}</strong> has been processed successfully. The seller has been notified.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-1 text-xs text-amber-700 dark:text-amber-300">
+        <div className="flex items-center gap-2 font-bold">
+          <Lock className="h-4 w-4 text-amber-500" />
+          Test Mode Checkout Fallback Active
+        </div>
+        <p className="opacity-90">
+          Confirm test payment for transaction <strong className="font-mono">{transactionId}</strong>.
+        </p>
+      </div>
+
+      {errorMessage && (
+        <div className="flex items-center gap-2 rounded-2xl bg-red-500/10 border border-red-500/30 p-4 text-xs font-semibold text-red-600 dark:text-red-400">
+          <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={isProcessing}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-base font-extrabold text-primary-foreground shadow-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+      >
+        <CreditCard className="h-5 w-5" />
+        {isProcessing ? 'Processing Payment…' : `Confirm Test Payment (${formattedAmount})`}
       </button>
     </form>
   );

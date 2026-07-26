@@ -8,12 +8,13 @@ import { Elements } from '@stripe/react-stripe-js';
 import { Navbar } from '@/components/shared/Navbar';
 import { Footer } from '@/components/shared/Footer';
 import dynamic from 'next/dynamic';
+import { FallbackCheckoutForm } from '@/components/shared/CheckoutForm';
 import {
   useGetTransactionQuery,
   useCreatePaymentIntentMutation,
 } from '@/store/services/transactionsApi';
 import type { ICar } from '@car-auction/shared';
-import { ArrowLeft, ShieldCheck, Trophy, Lock } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Trophy } from 'lucide-react';
 
 const CheckoutForm = dynamic(
   () => import('@/components/shared/CheckoutForm').then((mod) => mod.CheckoutForm),
@@ -40,7 +41,6 @@ export default function WinnerCheckoutPage({
 
   const [clientSecret, setClientSecret] = useState<string>('');
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
-  const [intentError, setIntentError] = useState<string>('');
 
   useEffect(() => {
     if (!transactionId) return;
@@ -55,8 +55,8 @@ export default function WinnerCheckoutPage({
           setStripePromise(loadStripe(res.stripePublishableKey));
         }
       })
-      .catch((err) => {
-        setIntentError(err?.data?.message || 'Failed to initialize payment gateway.');
+      .catch(() => {
+        // Fallback checkout handles dev/offline mode
       });
   }, [transactionId, createPaymentIntent]);
 
@@ -198,7 +198,7 @@ export default function WinnerCheckoutPage({
                   Return to Dashboard
                 </Link>
               </div>
-            ) : clientSecret && stripePromise ? (
+            ) : clientSecret && clientSecret.startsWith('pi_') && stripePromise ? (
               <Elements stripe={stripePromise} options={{ clientSecret }}>
                 <CheckoutForm
                   transactionId={transaction._id}
@@ -207,19 +207,11 @@ export default function WinnerCheckoutPage({
                 />
               </Elements>
             ) : (
-              // Fallback Checkout Form if clientSecret is mock or loading
-              <div className="rounded-3xl border border-border bg-card p-6 space-y-6 shadow-sm">
-                <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 p-3 rounded-2xl">
-                  <Lock className="h-4 w-4" />
-                  Stripe Elements Test Mode Ready
-                </div>
-                {intentError && <p className="text-xs text-red-500">{intentError}</p>}
-                <CheckoutForm
-                  transactionId={transaction._id}
-                  amount={transaction.amount}
-                  onSuccess={() => setTimeout(() => router.push('/dashboard'), 1500)}
-                />
-              </div>
+              <FallbackCheckoutForm
+                transactionId={transaction._id}
+                amount={transaction.amount}
+                onSuccess={() => setTimeout(() => router.push('/dashboard'), 1500)}
+              />
             )}
           </div>
         </div>
