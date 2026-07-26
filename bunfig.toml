@@ -1,0 +1,3 @@
+[install]
+# Bun workspace configuration
+# Workspaces are defined in package.json under "workspaces"
