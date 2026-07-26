@@ -85,6 +85,19 @@ Records *why* a choice was made, not just what was built. This is the file to re
 **Decision:** Implement Next.js Google Fonts (`next/font/google`) for `Inter` and `JetBrains_Mono` with CSS variable injection, and dynamically code-split heavy client bundles (`CheckoutForm` / Stripe SDK) using `next/dynamic`.
 **Why:** Self-hosting Google Fonts via `next/font` eliminates Flash of Unstyled Text (FOUT) and layout shifts (CLS) by pre-calculating font metrics at build time. Code-splitting Stripe Elements ensures that main browsing pages (Home, Search, Auction Room) do not download heavy payment SDK javascript, maximizing initial page load speed and Lighthouse performance.
 
+## Post-Win Fulfillment Lifecycle & Verified Review System
+**Decision:** Model post-payment vehicle handoff as a distinct state machine (`fulfillmentStatus`: `pending_payment` -> `paid_awaiting_pickup` -> `completed` / `disputed`) with contact info reveal, dual-party handoff confirmation, and verified-only seller reviews.
+**Why:** Most portfolio auction applications stop immediately after Stripe payment confirmation ("paid"), leaving the transaction hanging without a clear next step. Real vehicle marketplaces require pickup scheduling, contact information reveal (buyer <-> seller), handoff completion, seller payout initiation, dispute fallback, and verified seller reviews.
+**Security & Integrity Guarantee:** Reviews (`POST /api/reviews`) require a verified completed transaction (`transactionId`), strictly enforcing that only the winning buyer who paid and confirmed vehicle handoff can leave a seller rating. This eliminates fake, unverified, or duplicate reviews.
+
+## Lightweight In-App Threading over Global Messaging Infrastructure
+**Decision:** Implement transaction-scoped chat threads (`Message` model indexed by `transactionId`) reusing Phase 4's existing Socket.io connection instance (`transaction:<id>` rooms), rather than building a standalone multi-conversation inbox messaging service.
+**Why:** In vehicle marketplace transactions, communication occurs exclusively within the context of a specific vehicle handoff (coordinating pickup times, title transfer, and transport details). Scoping messages directly to `transactionId` avoids global inbox complexity, unread thread counters, and cross-user direct messaging spam, while leveraging 100% of our existing Socket.io WebSocket connection architecture.
+
+## Dual-Party Mutual Handoff Confirmation (`handoffConfirmedByBuyer` & `handoffConfirmedBySeller`)
+**Decision:** Require explicit handoff confirmations from BOTH the buyer (`handoffConfirmedByBuyer`) AND the seller (`handoffConfirmedBySeller`) before transitioning transaction status to `completed` and releasing seller payout (`payoutStatus = 'initiated'`).
+**Why:** Unilateral completion mechanisms (where only the buyer or only the seller can mark a transaction closed) create high vulnerability to fraud and disputes — a seller could falsely mark a car handed off without delivering keys, or a buyer could take possession and refuse to mark it received to block payout. Dual confirmation guarantees agreement between both parties before financial settlement occurs.
+
 ---
 
 ## Open / To Be Decided

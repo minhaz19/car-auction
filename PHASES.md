@@ -222,7 +222,32 @@
 - [x] `DECISIONS.md` — documented Design System Architecture (Sofascore live ticker inspiration) and Performance & Zero-FOUT Optimization strategy
 - [x] `PHASES.md` — this file
 
+## ✅ Phase 6.5 — Transaction Lifecycle, Handoff Loop & Reviews (Done)
+
+**Goal:** Complete post-auction vehicle handoff lifecycle including contact information reveal (buyer <-> seller), transaction-scoped real-time in-app chat thread, dual-party mutual handoff completion confirmation (`handoffConfirmedByBuyer` & `handoffConfirmedBySeller`), verified seller rating badges (`★ 4.8 (12 reviews)`), and customer support dispute path stub.
+
+### Backend (`apps/server`)
+- [x] `packages/shared/src/types/transaction.ts`, `message.ts`, `review.ts` — shared interfaces for handoff booleans, `IMessage`, and `IReview`
+- [x] `src/models/Transaction.ts` — updated Mongoose schema with `status` enum (`awaiting_handoff`), `handoffConfirmedByBuyer`, `handoffConfirmedBySeller`, `completedAt`, `disputed`
+- [x] `src/models/Message.ts` — Mongoose schema for transaction-scoped in-app chat messages
+- [x] `src/models/Review.ts` — Mongoose schema for verified seller reviews with compound index `{ transactionId: 1, reviewerId: 1 }`
+- [x] `src/socket.ts` — added `transaction:join` and `transaction:leave` socket room subscription handlers
+- [x] `src/routes/transactions.ts` — added `GET/POST /api/transactions/:id/messages` (emits `message:new`), `PATCH /api/transactions/:id/confirm-handoff` (mutual confirmation), `PATCH /api/transactions/:id/dispute`, `POST /api/transactions/:id/review`
+- [x] `src/routes/users.ts` — added `GET /api/users/:id/reviews` returning user reviews and average score
+
+### Frontend (`apps/web`)
+- [x] `src/store/services/transactionsApi.ts` & `usersApi.ts` — added `confirmHandoff`, `disputeTransaction`, `getMessages`, `sendMessage`, `submitTransactionReview`, and `getUserReviews`
+- [x] `src/components/shared/MessageThread.tsx` — real-time transaction chat component with Socket.io auto-scroll and instant message dispatch
+- [x] `src/components/shared/HandoffTracker.tsx` — visual status progress bar with buyer & seller confirmation badges
+- [x] `src/components/shared/SellerRatingBadge.tsx` — reusable star rating badge (`★ 4.8 (12 reviews)`) rendered on Car Cards, Car Details, and Dashboard
+- [x] `src/app/dashboard/transaction/[id]/page.tsx` — dedicated Transaction Handoff Portal page combining order summary, contact reveal, `<MessageThread>`, `<HandoffTracker>`, Review Modal, and Dispute button
+
+### Docs
+- [x] `API.md` — updated with all Phase 6.5 endpoints
+- [x] `DECISIONS.md` — documented Transaction-Scoped In-App Threading and Mutual Confirmation Model decisions
+- [x] `PHASES.md` — this file
+
 ---
 
-## 🎉 Project Complete — Phases 0-7 Fully Implemented!
-All core features, real-time Socket.io bidding engine, Mongoose models, Express REST APIs, RTK Query state management, Stripe test checkout flow, responsive UI, and performance optimizations are complete and verified.
+## 🎉 Project Complete — Phases 0-7 + Phase 6.5 Fully Implemented!
+All core features, real-time Socket.io bidding engine, Mongoose models, Express REST APIs, RTK Query state management, Stripe test checkout flow, post-win fulfillment coordination, mutual handoff confirmation, in-app real-time chat, seller rating badges, responsive UI, and performance optimizations are complete and verified.

@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import type { TransactionStatus, PayoutStatus } from '@car-auction/shared';
+import type { TransactionStatus, PayoutStatus, FulfillmentStatus } from '@car-auction/shared';
 
 export interface ITransactionDocument extends Document {
   carId: mongoose.Types.ObjectId;
@@ -8,8 +8,15 @@ export interface ITransactionDocument extends Document {
   amount: number;
   status: TransactionStatus;
   payoutStatus: PayoutStatus;
+  fulfillmentStatus?: FulfillmentStatus;
   stripePaymentIntentId?: string;
+  handoffConfirmedByBuyer: boolean;
+  handoffConfirmedBySeller: boolean;
   paidAt?: Date;
+  completedAt?: Date;
+  disputed?: boolean;
+  disputeReason?: string;
+  disputedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,7 +48,7 @@ const TransactionSchema = new Schema<ITransactionDocument>(
     },
     status: {
       type: String,
-      enum: ['pending', 'paid', 'failed', 'refunded'],
+      enum: ['pending', 'paid', 'awaiting_handoff', 'completed', 'disputed', 'failed', 'refunded'],
       default: 'pending',
       index: true,
     },
@@ -50,11 +57,37 @@ const TransactionSchema = new Schema<ITransactionDocument>(
       enum: ['pending', 'initiated', 'completed'],
       default: 'pending',
     },
+    fulfillmentStatus: {
+      type: String,
+      enum: ['pending_payment', 'paid_awaiting_pickup', 'completed', 'disputed'],
+      default: 'pending_payment',
+    },
     stripePaymentIntentId: {
       type: String,
       index: true,
     },
+    handoffConfirmedByBuyer: {
+      type: Boolean,
+      default: false,
+    },
+    handoffConfirmedBySeller: {
+      type: Boolean,
+      default: false,
+    },
     paidAt: {
+      type: Date,
+    },
+    completedAt: {
+      type: Date,
+    },
+    disputed: {
+      type: Boolean,
+      default: false,
+    },
+    disputeReason: {
+      type: String,
+    },
+    disputedAt: {
       type: Date,
     },
   },

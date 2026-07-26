@@ -11,6 +11,8 @@ import {
   useGetCarByIdQuery,
   useDeleteCarMutation,
 } from '@/store/services/carsApi';
+import { useGetUserTransactionsQuery } from '@/store/services/transactionsApi';
+import { FulfillmentPanel } from '@/components/shared/FulfillmentPanel';
 import { ArrowLeft, Trash2, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
 export default function SellerListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -18,6 +20,13 @@ export default function SellerListingDetailPage({ params }: { params: Promise<{ 
   const router = useRouter();
   const { data: car, isLoading, isError } = useGetCarByIdQuery(id);
   const [deleteCarMutation, { isLoading: isDeleting }] = useDeleteCarMutation();
+  const { data: userTransactions = [] } = useGetUserTransactionsQuery();
+
+  const sellerTx = userTransactions.find((tx) => {
+    if (!tx.carId) return false;
+    const txCarId = typeof tx.carId === 'object' && tx.carId !== null ? (tx.carId as { _id: string })._id : tx.carId;
+    return String(txCarId) === String(id);
+  });
 
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -151,6 +160,11 @@ export default function SellerListingDetailPage({ params }: { params: Promise<{ 
             </span>
           </div>
         </div>
+
+        {/* Fulfillment Panel for Seller if transaction exists */}
+        {sellerTx && (sellerTx.status === 'paid' || sellerTx.status === 'completed') && (
+          <FulfillmentPanel transaction={sellerTx} isBuyer={false} />
+        )}
 
         {/* 2-Column Detail View */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">

@@ -21,6 +21,8 @@ import {
   useGetUserTransactionsQuery,
 } from '@/store/services/transactionsApi';
 import { Skeleton, CarCardSkeleton, DashboardBannerSkeleton } from '@/components/ui/Skeleton';
+import { FulfillmentPanel } from '@/components/shared/FulfillmentPanel';
+import { ReviewModal } from '@/components/shared/ReviewModal';
 import type { ICar } from '@car-auction/shared';
 import {
   Gavel,
@@ -34,6 +36,7 @@ import {
   XCircle,
   Clock,
   CreditCard,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -56,6 +59,7 @@ export default function DashboardPage() {
   const [markAllRead] = useMarkAllNotificationsReadMutation();
 
   const [roleMessage, setRoleMessage] = useState('');
+  const [activeReviewTxId, setActiveReviewTxId] = useState<string | null>(null);
 
   const handleUpgradeRole = async () => {
     try {
@@ -257,21 +261,31 @@ export default function DashboardPage() {
                         )}
                       </div>
 
-                      {/* Checkout CTA for Won Auctions */}
+                      {/* Fulfillment Panel / Checkout CTA for Won Auctions */}
                       {isWon && (
-                        matchingTx?.status === 'paid' ? (
-                          <div className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                            <CheckCircle2 className="h-4 w-4" /> Paid & Confirmed
+                        matchingTx?.status === 'paid' || matchingTx?.status === 'awaiting_handoff' || matchingTx?.status === 'completed' || matchingTx?.status === 'disputed' ? (
+                          <div className="space-y-3">
+                            <Link
+                              href={`/dashboard/transaction/${matchingTx._id}`}
+                              className="flex items-center justify-center gap-1.5 rounded-2xl bg-emerald-500 text-black py-3 text-xs font-extrabold shadow-lg hover:bg-emerald-400 transition-colors"
+                            >
+                              <ShieldCheck className="h-4 w-4" /> Open Vehicle Handoff & Chat Portal
+                            </Link>
+                            <FulfillmentPanel
+                              transaction={matchingTx}
+                              isBuyer={true}
+                              onOpenReviewModal={() => setActiveReviewTxId(matchingTx._id)}
+                            />
                           </div>
                         ) : matchingTx ? (
                           <Link
                             href={`/dashboard/checkout/${matchingTx._id}`}
-                            className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-white py-2 text-xs font-extrabold shadow-md hover:bg-emerald-700 transition-colors animate-pulse"
+                            className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-white py-2.5 text-xs font-extrabold shadow-md hover:bg-emerald-700 transition-colors animate-pulse"
                           >
                             <CreditCard className="h-4 w-4" /> Payment Due — Complete Checkout
                           </Link>
                         ) : (
-                          <div className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600/80 text-white py-2 text-xs font-extrabold shadow-md">
+                          <div className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600/80 text-white py-2.5 text-xs font-extrabold shadow-md">
                             <CreditCard className="h-4 w-4" /> Auction Won — Generating Checkout…
                           </div>
                         )
@@ -408,6 +422,15 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
+
+      {/* Review Modal for Completed Transactions */}
+      {activeReviewTxId && (
+        <ReviewModal
+          transactionId={activeReviewTxId}
+          isOpen={!!activeReviewTxId}
+          onClose={() => setActiveReviewTxId(null)}
+        />
+      )}
 
       <Footer />
     </div>

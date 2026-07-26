@@ -10,6 +10,7 @@ import carsRouter from './routes/cars';
 import bidsRouter from './routes/bids';
 import usersRouter from './routes/users';
 import transactionsRouter from './routes/transactions';
+import reviewsRouter from './routes/reviews';
 import webhooksRouter from './routes/webhooks';
 import { initSocketServer } from './socket';
 import { startNotificationCron } from './services/notificationCron';
@@ -63,6 +64,7 @@ app.use('/api/meta', metaRouter);
 app.use('/api/cars', carsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/transactions', transactionsRouter);
+app.use('/api/reviews', reviewsRouter);
 app.use('/api', bidsRouter);
 
 // ─── Start ────────────────────────────────────────────────────────────────────

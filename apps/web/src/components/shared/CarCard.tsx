@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import type { ICar } from '@car-auction/shared';
+import { SellerRatingBadge } from './SellerRatingBadge';
 import { Clock, Gavel, Fuel, Gauge } from 'lucide-react';
 
 interface CarCardProps {
@@ -101,10 +102,15 @@ export function CarCard({ car }: CarCardProps) {
 
       {/* Details Body */}
       <div className="flex flex-1 flex-col p-5 space-y-3">
-        <div className="flex items-baseline justify-between gap-2">
+        <div className="flex items-center justify-between gap-2">
           <h3 className="text-lg font-extrabold text-foreground line-clamp-1 group-hover:text-emerald-400 transition-colors">
             {car.year} {car.make} {car.model}
           </h3>
+          {car.sellerId && (
+            <SellerRatingBadge
+              sellerId={typeof car.sellerId === 'object' && car.sellerId !== null ? (car.sellerId as { _id: string })._id : String(car.sellerId)}
+            />
+          )}
         </div>
 
         {/* Spec Pill Tags */}

@@ -2,6 +2,7 @@ import { Router, Request, Response, IRouter } from 'express';
 import mongoose from 'mongoose';
 import { User } from '../models/User';
 import { Notification } from '../models/Notification';
+import { Review } from '../models/Review';
 import { requireAuth } from '../middleware/auth';
 
 const router: IRouter = Router();
@@ -138,29 +139,35 @@ router.patch('/me/notifications/read-all', requireAuth, async (req: Request, res
   }
 });
 
-// ─── USER ROLE UPGRADE ENDPOINT ───────────────────────────────────────────────
+// ─── PUBLIC USER REVIEWS & RATING BADGE ENDPOINT ──────────────────────────────
 
-// PATCH /api/users/me/role
-router.patch('/me/role', requireAuth, async (req: Request, res: Response): Promise<void> => {
+// GET /api/users/:id/reviews
+router.get('/:id/reviews', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { role } = req.body as { role?: string };
-    if (!role || (role !== 'seller' && role !== 'buyer')) {
-      res.status(400).json({ message: 'Role must be either "seller" or "buyer"' });
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: 'Invalid user ID' });
       return;
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user!.sub,
-      { $set: { role } },
-      { new: true },
-    );
+    const reviews = await Review.find({ revieweeId: id })
+      .sort({ createdAt: -1 })
+      .populate('reviewerId', 'name')
+      .populate('carId', 'make model year');
+
+    const totalReviews = reviews.length;
+    const averageRating =
+      totalReviews > 0
+        ? Number((reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(1))
+        : 0;
 
     res.status(200).json({
-      message: `Account role updated to ${role}`,
-      user: updatedUser,
+      reviews,
+      averageRating,
+      totalReviews,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update user role', error });
+    res.status(500).json({ message: 'Failed to fetch user reviews', error });
   }
 });
 

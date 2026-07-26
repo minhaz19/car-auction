@@ -8,6 +8,7 @@ import { ImageGallery } from '@/components/shared/ImageGallery';
 import { SpecSheet } from '@/components/shared/SpecSheet';
 import { AuctionPanel } from '@/components/shared/AuctionPanel';
 import { BidHistoryList } from '@/components/shared/BidHistoryList';
+import { SellerRatingBadge } from '@/components/shared/SellerRatingBadge';
 import { useGetCarByIdQuery } from '@/store/services/carsApi';
 import { useAuctionRoom } from '@/hooks/useAuctionRoom';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
@@ -87,6 +88,12 @@ export default function CarDetailPage({ params }: { params: Promise<{ id: string
           </div>
 
           <div className="flex items-center gap-3">
+            {car.sellerId && (
+              <SellerRatingBadge
+                sellerId={typeof car.sellerId === 'object' && car.sellerId !== null ? (car.sellerId as { _id: string })._id : String(car.sellerId)}
+                size="md"
+              />
+            )}
             {car.status === 'live' && (
               <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />

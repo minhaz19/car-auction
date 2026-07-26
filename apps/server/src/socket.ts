@@ -105,7 +105,23 @@ export function initSocketServer(httpServer: HttpServer) {
       if (carId) leaveRoom(socket, carId);
     });
 
-    // 3. Disconnect cleanup
+    // 3. Client joins a transaction chat room
+    socket.on('transaction:join' as unknown as keyof ClientToServerEvents, (data: unknown) => {
+      const txId = typeof data === 'object' && data !== null && 'transactionId' in data ? (data as { transactionId: string }).transactionId : String(data);
+      if (txId) {
+        socket.join(`transaction:${txId}`);
+      }
+    });
+
+    // 4. Client leaves a transaction chat room
+    socket.on('transaction:leave' as unknown as keyof ClientToServerEvents, (data: unknown) => {
+      const txId = typeof data === 'object' && data !== null && 'transactionId' in data ? (data as { transactionId: string }).transactionId : String(data);
+      if (txId) {
+        socket.leave(`transaction:${txId}`);
+      }
+    });
+
+    // 5. Disconnect cleanup
     socket.on('disconnect', () => {
       if (socket.data.currentRoom) {
         leaveRoom(socket, socket.data.currentRoom);

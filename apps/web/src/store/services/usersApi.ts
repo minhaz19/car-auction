@@ -70,6 +70,10 @@ export const usersApi = createApi({
         body,
       }),
     }),
+
+    getUserReviews: builder.query<import('@car-auction/shared').UserReviewsResponse, string>({
+      query: (userId) => `/${userId}/reviews`,
+    }),
   }),
 });
 
@@ -81,4 +85,5 @@ export const {
   useMarkNotificationReadMutation,
   useMarkAllNotificationsReadMutation,
   useUpdateRoleMutation,
+  useGetUserReviewsQuery,
 } = usersApi;

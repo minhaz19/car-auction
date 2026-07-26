@@ -242,9 +242,96 @@ Generates or retrieves Stripe `PaymentIntent` client secret for Stripe Elements.
 ---
 
 ### `POST /api/transactions/:id/confirm`
-Client-side payment confirmation trigger for immediate UX responsiveness.
+Client-side payment confirmation trigger. Transitions transaction status to `awaiting_handoff` and reveals contact details.
 
 **Auth:** `Authorization: Bearer <accessToken>` (buyer only)
+
+---
+
+### `PATCH /api/transactions/:id/confirm-handoff`
+Mutual confirmation endpoint. Sets `handoffConfirmedByBuyer` or `handoffConfirmedBySeller` depending on caller identity. When both are `true`, status becomes `completed` and seller `payoutStatus` becomes `initiated`.
+
+**Auth:** `Authorization: Bearer <accessToken>` (buyer or seller)
+
+---
+
+### `PATCH /api/transactions/:id/dispute`
+Flags a transaction dispute, setting status to `disputed`.
+
+**Auth:** `Authorization: Bearer <accessToken>` (buyer or seller)
+
+**Body:**
+```json
+{
+  "reason": "Vehicle description mismatch or pickup delay"
+}
+```
+
+---
+
+### `GET /api/transactions/:id/messages`
+Returns in-app chat thread messages for a specific transaction.
+
+**Auth:** `Authorization: Bearer <accessToken>` (buyer or seller only)
+
+---
+
+### `POST /api/transactions/:id/messages`
+Sends a new message in the transaction chat thread and emits `message:new` to `transaction:<id>` socket room.
+
+**Auth:** `Authorization: Bearer <accessToken>` (buyer or seller only)
+
+**Body:**
+```json
+{
+  "text": "Hello! I can pick up the vehicle this Saturday at 10 AM."
+}
+```
+
+---
+
+### `POST /api/transactions/:id/review`
+Submits a verified 5-star rating and review for a completed transaction.
+
+**Auth:** `Authorization: Bearer <accessToken>` (buyer or seller, once per transaction)
+
+**Body:**
+```json
+{
+  "rating": 5,
+  "comment": "Smooth handoff coordination and immaculate car condition!"
+}
+```
+
+---
+
+## User Reviews & Public Seller Rating Badges — `/api/users`
+
+### `GET /api/users/:id/reviews`
+Returns public verified reviews, total review count, and average rating score for a user.
+
+**Response `200`**
+```json
+{
+  "reviews": [],
+  "averageRating": 4.8,
+  "totalReviews": 12
+}
+```
+
+---
+
+### `GET /api/reviews/seller/:sellerId`
+Returns all verified post-transaction reviews and average rating score for a seller.
+
+**Response `200`**
+```json
+{
+  "reviews": [],
+  "averageRating": 5.0,
+  "totalReviews": 1
+}
+```
 
 ---
 

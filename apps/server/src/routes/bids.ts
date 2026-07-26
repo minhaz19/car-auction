@@ -46,6 +46,20 @@ router.post('/cars/:id/bid', requireAuth, async (req: Request, res: Response): P
       return;
     }
 
+    // Cannot outbid yourself if you are already the highest bidder
+    const currentHighestBid = await Bid.findOne({ carId, status: 'active' });
+    if (currentHighestBid) {
+      const highestUserIdStr =
+        typeof currentHighestBid.userId === 'object' && currentHighestBid.userId !== null && '_id' in currentHighestBid.userId
+          ? String((currentHighestBid.userId as { _id: unknown })._id)
+          : String(currentHighestBid.userId);
+
+      if (highestUserIdStr === req.user!.sub) {
+        res.status(400).json({ message: 'You are already the highest bidder on this auction' });
+        return;
+      }
+    }
+
     // Calculate minimum bid increment ($100 minimum or 1% of current bid)
     const minIncrement = Math.max(100, Math.round(existingCar.currentBid * 0.01));
     const minRequiredBid = existingCar.currentBid + minIncrement;
