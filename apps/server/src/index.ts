@@ -1,22 +1,34 @@
 import 'dotenv/config';
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { connectDB } from './db/connection';
+import authRouter from './routes/auth';
 
 const app: Application = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // CORS: allow Next.js dev server and production origin
+const allowedOrigins = [
+  'http://localhost:3000',
+  process.env.CLIENT_ORIGIN || 'http://localhost:3000',
+];
+
 app.use(
   cors({
-    origin: [
-      'http://localhost:3000', // Next.js dev
-      process.env.CLIENT_ORIGIN || 'http://localhost:3000',
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. curl, Postman) in development
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS policy: origin ${origin} not allowed`));
+      }
+    },
     credentials: true,
   }),
 );
@@ -29,6 +41,8 @@ app.get('/api/health', (_req: Request, res: Response) => {
     uptime: process.uptime(),
   });
 });
+
+app.use('/api/auth', authRouter);
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 async function start() {

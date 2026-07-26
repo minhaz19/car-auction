@@ -1,3 +1,40 @@
-# DECISIONS.md
+# Architecture Decisions — RevBid (Car Auction Platform)
 
-> Architecture and design decisions made during development — explains *why* key choices were made, for interviews and future contributors.
+Records *why* a choice was made, not just what was built. This is the file to reference in interviews when asked "why did you do X instead of Y."
+
+---
+
+## Monorepo (Bun workspaces) over separate repos
+**Decision:** Single repo (`apps/web`, `apps/server`, `packages/shared`) using Bun workspaces.
+**Why:** Frontend and backend evolve together and share types (Car, Bid, User, Socket event payloads). One repo means one source of truth for those types instead of copy-pasting or publishing an internal npm package. Also simpler for a solo project — one CI pipeline, one README, one link on a resume.
+**Alternative considered:** Turborepo/Nx — rejected as unnecessary overhead at this scale. Workspaces alone are sufficient for a two-app solo project; would reconsider at team scale or if build times became a real problem.
+
+## Bun over npm/pnpm
+**Decision:** Bun for package management and local dev runtime.
+**Why:** Faster installs and dev server startup. Node-compatible enough that Express and Next.js both run fine on it locally.
+**Caveat:** Deployment targets (Vercel, Render/Railway) may still run the actual production build/runtime on Node — verify Bun runtime support per platform at deploy time; not a blocker, since Bun's output is Node-compatible.
+
+## httpOnly cookies for refresh token, not localStorage
+**Decision:** Refresh token stored as an httpOnly, secure, sameSite cookie. Access token sent in memory/Authorization header, never persisted to localStorage.
+**Why:** localStorage is readable by any JS on the page, making it vulnerable to XSS-based token theft. httpOnly cookies aren't accessible to JavaScript at all, which removes that entire attack surface for the longer-lived refresh token.
+**Trade-off:** Requires CORS + cookie configuration to be handled carefully between the Next.js app and Express API (credentials: true, proper sameSite settings), which is more setup than just reading a token from localStorage — accepted as worth the security trade-off.
+
+## Refresh token rotation, not just reissue
+**Decision:** Every time `/api/auth/refresh` is called, the old refresh token is invalidated and a new one is issued and stored.
+**Why:** If a refresh token is ever stolen, rotation limits the window of misuse — a stolen token becomes invalid the next time the legitimate user refreshes, and reuse of an already-rotated token can be treated as a signal of compromise (worth adding detection for later: if an old/rotated token is presented again, revoke all sessions for that user).
+**Alternative considered:** Simple reissue without rotation — rejected as weaker; a leaked long-lived token would stay valid for its full 7-day life with no way to detect misuse.
+
+## Redux Toolkit + RTK Query for state management
+**Decision:** Redux Toolkit (`createSlice`) for client/UI state (auth user, filter drawer, active auction room UI state) and RTK Query for all server-derived state (car listings, filters, bid history, dashboard data, mutations).
+**Why:** One consistent library handles both client and server state rather than combining two separate tools — simpler mental model, one set of devtools, one data-fetching/caching pattern to maintain. RTK Query provides caching, background refetching, and loading/error states out of the box, same as it would with a separate query library, but stays within the Redux ecosystem.
+**Real-time integration:** On a Socket.io bid event, dispatch an action that updates the RTK Query cache directly (`api.util.updateQueryData`) or invalidates the relevant tag to trigger a refetch — keeps live updates and fetched data in the same cache rather than running two separate state systems.
+**Alternative considered:** Zustand + TanStack Query — a lighter-weight split that would also work well here. Redux Toolkit + RTK Query was chosen instead for having one unified library end-to-end, and because RTK remains the more common pattern in larger/enterprise codebases.
+
+## Component reusability standard
+**Decision:** All UI built as small, reusable components under `components/ui` (primitives: Button, Card, Badge, etc.) and `components/shared` (composed, project-specific: FilterChip, CountdownTimer, CarCard), rather than one-off inline JSX per page.
+**Why:** Multiple pages (home, search, car detail, dashboard) reuse the same visual elements (car cards, filters, badges). A shared component library keeps styling consistent and makes future phases (real-time updates, design polish) faster since changes propagate from one place.
+
+---
+
+## Open / To Be Decided
+*(add here as new questions come up — e.g. Cloudinary vs S3 for images, Yjs vs custom sync if collaborative features are ever added, etc.)*

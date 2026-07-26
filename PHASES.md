@@ -1,3 +1,69 @@
 # PHASES.md
 
 > Breakdown of project phases and their completion status — tracks what has been built, what is in progress, and what is upcoming.
+
+---
+
+## ✅ Phase 0 — Monorepo Setup (Done)
+
+**Goal:** Scaffold the full project structure with zero business logic.
+
+- [x] Bun workspaces configured (`apps/*`, `packages/*`)
+- [x] `apps/web` — Next.js 16.2.12, React 19, TypeScript, Tailwind CSS v4, ESLint, Prettier
+- [x] `apps/web` — shadcn/ui initialized (deps + `components.json` + `src/lib/utils.ts`)
+- [x] `apps/server` — Express, TypeScript, Socket.io, Mongoose, dotenv, CORS
+- [x] `apps/server` — Health-check route `GET /api/health`
+- [x] `apps/server` — MongoDB connection file (`src/db/connection.ts`), no model schemas
+- [x] `apps/server` — `.env.example` with `MONGODB_URI`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `PORT`
+- [x] `packages/shared` — Empty TypeScript package (`@car-auction/shared`) scaffolded
+- [x] `.github/workflows/ci.yml` — lint + typecheck on both apps on push
+- [x] Root docs — `README.md`, `DECISIONS.md`, `PHASES.md`, `API.md`, `REQUIREMENTS.md`
+- [x] Verified: `bun install`, both dev servers start, `GET /api/health` responds `200 OK`, both apps typecheck and lint clean
+
+---
+
+## ✅ Phase 1 — Authentication (Done)
+
+**Goal:** Full JWT auth stack — register, login, refresh, logout — with protected routes and session restore.
+
+### Backend (`apps/server`)
+- [x] `packages/shared/src/types/user.ts` — `IUserPublic`, `JwtPayload`, `UserRole` shared types
+- [x] `src/models/User.ts` — Mongoose User schema (`name`, `email`, `passwordHash`, `role`, `refreshTokens[]`, timestamps). `toJSON` strips sensitive fields.
+- [x] `src/config/jwt.ts` — `generateAccessToken` (15 min), `generateRefreshToken` (7 days), `verifyAccessToken`, `verifyRefreshToken`
+- [x] `src/middleware/auth.ts` — `requireAuth` (Bearer token → `req.user`), `requireRole(...roles)` factory
+- [x] `src/routes/auth.ts` — 5 endpoints: register, login, refresh (with rotation + reuse detection), logout, logout-all
+- [x] `src/index.ts` — `cookie-parser` mounted, auth router mounted at `/api/auth`
+- [x] MongoDB Atlas connected via `.env`
+
+### Frontend (`apps/web`)
+- [x] `@reduxjs/toolkit`, `react-redux`, `axios`, `@car-auction/shared` installed
+- [x] `src/store/slices/authSlice.ts` — Redux slice: `user`, `accessToken`, `isLoading`
+- [x] `src/store/services/authApi.ts` — RTK Query: all 5 auth mutations with `credentials: 'include'`
+- [x] `src/store/index.ts` — Redux store configured with auth slice + RTK Query middleware
+- [x] `src/hooks/useRedux.ts` — typed `useAppDispatch` / `useAppSelector`
+- [x] `src/hooks/useAuth.ts` — `useAuth()` hook: login, register, logout, logoutAll actions + state selectors
+- [x] `src/providers/StoreProvider.tsx` — Redux Provider + silent session restore on mount (`/refresh` call)
+- [x] `src/app/layout.tsx` — wrapped in `StoreProvider`, updated with proper site metadata
+- [x] `src/app/auth/login/page.tsx` — functional login form
+- [x] `src/app/auth/register/page.tsx` — functional register form with confirm-password check
+- [x] `src/app/dashboard/page.tsx` — protected placeholder showing user name + role
+- [x] `src/middleware.ts` — Next.js edge middleware protecting `/dashboard/*`, redirects unauthenticated to `/auth/login`
+- [x] `.env.local` — `NEXT_PUBLIC_API_URL=http://localhost:5001`
+
+### Docs
+- [x] `API.md` — all endpoints documented with request/response shapes and error tables
+- [x] `DECISIONS.md` — httpOnly cookies, token rotation, Redux Toolkit + RTK Query decisions (written by you)
+- [x] `PHASES.md` — this file
+
+### Verified
+- [x] `tsc --noEmit` clean on both apps
+- [x] ESLint clean on both apps
+- [x] Register → login → `/dashboard` redirect works
+- [x] `/dashboard` without session → redirects to `/auth/login`
+- [x] Silent refresh restores session on page reload
+
+---
+
+## 🔜 Phase 2 — Car Listings (Up Next)
+
+Seller flow, search/filter, listing cards, `/search` page.
