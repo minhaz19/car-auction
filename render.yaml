@@ -3,7 +3,6 @@ services:
     name: revbid-server
     env: node
     region: oregon
-    rootDir: .
     buildCommand: >
       npm install -g bun &&
       bun install &&
