@@ -31,17 +31,32 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// CORS: allow Next.js dev server and production origin
-const allowedOrigins = [
+// CORS: allow Next.js dev server, production origins, and Vercel previews
+const configuredOrigins = (process.env.CLIENT_ORIGIN || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+const defaultAllowedOrigins = [
   'http://localhost:3000',
-  process.env.CLIENT_ORIGIN || 'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  ...configuredOrigins,
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. curl, Postman) in development
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow non-browser calls (e.g. Stripe webhooks, curl, Mobile apps)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      const isAllowed =
+        defaultAllowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app'); // Allow Vercel preview deployments
+
+      if (isAllowed) {
         callback(null, true);
       } else {
         callback(new Error(`CORS policy: origin ${origin} not allowed`));

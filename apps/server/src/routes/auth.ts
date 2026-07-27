@@ -17,10 +17,11 @@ const REFRESH_COOKIE_NAME = 'refreshToken';
 
 /** Cookie options for the refresh token */
 function refreshCookieOptions(): CookieOptions {
+  const isProduction = process.env.NODE_ENV === 'production';
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     maxAge: REFRESH_COOKIE_MAX_AGE,
     path: '/api/auth', // scope cookie to auth routes only
   };

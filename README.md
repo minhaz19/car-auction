@@ -1,98 +1,130 @@
-# Car Auction Platform
+# RevBid — Live Car Auctions & Real-Time Bidding Platform
 
-A full-stack, real-time car auction platform built with Next.js, Express.js, MongoDB, and Socket.io. Users can browse and search vehicle listings, place live bids in a real-time auction room, and sellers can create and manage listings. The platform features concurrency-safe bidding with MongoDB transactions/optimistic locking, anti-sniping auto-extension logic, server-authoritative countdown timers, and a secure JWT access + refresh token auth flow with httpOnly cookie storage and session revocation — all built to be defensible in engineering interviews.
+RevBid is a production-ready, full-stack automotive live auction platform engineered with **Next.js 16 (App Router)**, **Express.js**, **Socket.io**, **MongoDB (Mongoose)**, and **Stripe Test Payments**.
 
----
-
-## Tech Stack
-
-| Layer | Choice |
-|---|---|
-| Frontend | Next.js 16 (App Router), React 19, TypeScript |
-| Styling | Tailwind CSS v4 + shadcn/ui |
-| Backend | Express.js (REST API), TypeScript |
-| Database | MongoDB (Mongoose) |
-| Real-time | Socket.io |
-| Auth | JWT access + refresh tokens, httpOnly cookies |
-| File storage | Cloudinary / S3 (for car images) |
-| Payments | Stripe (test mode) |
-| Monorepo | Bun workspaces |
-| Deployment | Vercel (web) + Render/Railway (server) |
-| Testing | Vitest + Playwright |
+The platform is designed to emulate high-volume automotive marketplaces (such as *Bring a Trailer* and *Cars & Bids*), featuring concurrency-safe atomic bidding (`findOneAndUpdate` with `$lt` currentBid), anti-sniping auto-extension logic (+2 min on last-minute bids), server-authoritative countdown timers, real-time presence indicators, Stripe Elements payment checkout, mutual handoff confirmation, transaction-scoped chat threads, verified seller rating badges, and a MongoDB-backed admin moderation panel.
 
 ---
 
-## Project Structure
+## 🌐 Live Deployments & Demo Links
 
-```
-car-auction/
-├── apps/
-│   ├── web/       # Next.js 16 App Router frontend
-│   └── server/    # Express.js REST API + Socket.io backend
-├── packages/
-│   └── shared/    # Shared TypeScript types (populated in later phases)
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-├── REQUIREMENTS.md
-├── DECISIONS.md
-├── PHASES.md
-├── API.md
-└── README.md
-```
+- **Frontend App (Vercel):** [https://revbid.vercel.app](https://revbid.vercel.app)
+- **Backend API & WebSockets (Render / Railway):** [https://revbid-api.onrender.com](https://revbid-api.onrender.com)
+- **API Health Check:** `GET https://revbid-api.onrender.com/api/health`
 
 ---
 
-## How to Run Locally
+## 🔐 Pre-configured Demo Accounts
+
+Run `bun run --cwd apps/server seed` to populate sample vehicle inventory and pre-configured accounts:
+
+| Role | Email | Password | Permissions |
+|---|---|---|---|
+| **Admin** | `admin@revbid.com` | `AdminPass123!` | Analytics, Moderation, User Suspension, Dispute Adjudication |
+| **Seller** | `seller@revbid.dev` | `Password123!` | Create & Manage Vehicle Listings, Accept Handoff |
+| **Buyer** | `buyer@revbid.dev` | `Password123!` | Place Live Bids, Watchlist, Stripe Checkout, Submit Reviews |
+
+---
+
+## 🛠️ Complete Tech Stack & Architecture
+
+| Tier | Technology | Purpose & Implementation Details |
+|---|---|---|
+| **Frontend** | Next.js 16 (App Router) + React 19 | Server & Client Components, dynamic code-splitting (`next/dynamic`), `next/font` zero-FOUT typography (`Inter` + `JetBrains Mono`) |
+| **Styling** | Vanilla CSS Tokens + Tailwind CSS v4 | Near-black dark design system (`#121212` background, `#10B981` Emerald accent), Sofascore sports-ticker inspired bid displays |
+| **State Management** | Redux Toolkit & RTK Query | Cache invalidation, tag management (`carsApi`, `transactionsApi`, `usersApi`, `adminApi`) |
+| **Backend API** | Express.js REST API | Modular TypeScript routers (`/api/auth`, `/api/cars`, `/api/transactions`, `/api/reviews`, `/api/admin`) |
+| **Real-Time Engine** | Socket.io v4 | Transaction & auction room presence tracking, live bid broadcast, anti-sniping extension events (`auction:extended`) |
+| **Database** | MongoDB (Mongoose 8) | Schema validation, compound unique indices, MongoDB Aggregation pipelines for admin analytics |
+| **Payments** | Stripe API (`@stripe/stripe-js`) | `PaymentIntent` server initialization, Stripe Elements payment form, signature-verified webhooks (`POST /api/webhooks/stripe`) |
+| **Monorepo Scaffolding** | Bun Workspaces | Shared TypeScript type definitions package (`@car-auction/shared`) |
+
+---
+
+## 🚀 How to Run Locally
 
 ### Prerequisites
-- [Bun](https://bun.sh) v1.1+
-- MongoDB running locally or a MongoDB Atlas connection string
+- [Bun](https://bun.sh) v1.1+ installed
+- MongoDB instance running locally (`mongodb://localhost:27017/car-auction`) or a MongoDB Atlas connection string
 
-### 1. Install dependencies (from repo root)
+### 1. Clone & Install Dependencies
 
 ```bash
+git clone https://github.com/your-username/car-auction.git
+cd car-auction
 bun install
 ```
 
-### 2. Configure the server environment
+### 2. Build Shared Package
 
 ```bash
+bun run --cwd packages/shared build
+```
+
+### 3. Configure Environment Variables
+
+Create `.env` in `apps/server` and `.env.local` in `apps/web`:
+
+```bash
+# Server Environment
 cp apps/server/.env.example apps/server/.env
-# Then edit apps/server/.env with your actual MONGODB_URI and JWT secrets
+
+# Web Environment
+cp apps/web/.env.example apps/web/.env.local
 ```
 
-### 3. Start the Next.js frontend
+### 4. Seed Database
 
 ```bash
+bun run --cwd apps/server seed
+```
+
+### 5. Start Development Servers
+
+Run both servers concurrently:
+
+```bash
+# Terminal 1: Next.js Frontend (http://localhost:3000)
 bun run dev:web
-# → http://localhost:3000
-```
 
-### 4. Start the Express backend
-
-```bash
+# Terminal 2: Express Backend (http://localhost:5001)
 bun run dev:server
-# → http://localhost:5001
-# Health check: http://localhost:5001/api/health
-```
-
-### 5. Verify the health check
-
-```bash
-curl http://localhost:5001/api/health
-# Expected: { "status": "ok", "timestamp": "...", "uptime": ... }
 ```
 
 ---
 
-## Scripts (root)
+## ⚙️ Environment Variables Audit
 
-| Command | Description |
-|---|---|
-| `bun install` | Install all workspace dependencies |
-| `bun run dev:web` | Start Next.js dev server |
-| `bun run dev:server` | Start Express server with file watch |
-| `bun run lint` | Lint both apps |
-| `bun run typecheck` | Typecheck both apps |
-| `bun run format` | Format all files with Prettier |
+### Server (`apps/server/.env`)
+- `PORT`: HTTP server port (Default: `5001`)
+- `NODE_ENV`: Runtime mode (`development` or `production`)
+- `MONGODB_URI`: MongoDB connection string
+- `JWT_ACCESS_SECRET`: Secret key for short-lived access tokens (15m)
+- `JWT_REFRESH_SECRET`: Secret key for long-lived refresh tokens (7d)
+- `CLIENT_ORIGIN`: Allowed cross-origin domain for Express & Socket.io CORS
+- `STRIPE_SECRET_KEY`: Stripe API secret key (`sk_test_...`)
+- `STRIPE_WEBHOOK_SECRET`: Stripe webhook signing secret (`whsec_...`)
+
+### Web (`apps/web/.env.local`)
+- `NEXT_PUBLIC_API_URL`: Express REST API endpoint (`http://localhost:5001/api`)
+- `NEXT_PUBLIC_SOCKET_URL`: Socket.io server endpoint (`http://localhost:5001`)
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`: Stripe publishable key (`pk_test_...`)
+
+---
+
+## 📋 Known Limitations & Architectural Scope
+
+To keep this portfolio project focused on high-concurrency bidding, payment security, and fulfillment lifecycle integrity:
+
+1. **Payment & Payout Gateways**: Stripe Test Mode is integrated with signature-verified webhook handlers. Seller payout release transitions transaction status to `payoutStatus: 'initiated'` (actual bank ACH transfer routing is simulated).
+2. **In-App Chat Scoping**: Messaging is transaction-scoped (`Message` model bound to `transactionId`) to facilitate vehicle handoff coordination, avoiding multi-inbox direct messaging bloat.
+3. **Image Hosting**: Car listing images use curated unsplash vehicle CDN URLs.
+4. **Admin Moderation**: Scoped as a lean control panel for force-closing listings, suspending users, and resolving dispute queues rather than an enterprise CRM.
+
+---
+
+## 📄 License & Documentation
+
+- [API Specification Document (`API.md`)](API.md)
+- [Architecture & Design Decisions (`DECISIONS.md`)](DECISIONS.md)
+- [Phase Breakdown & Implementation Roadmap (`PHASES.md`)](PHASES.md)

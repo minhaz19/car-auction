@@ -273,7 +273,29 @@
 - [x] `DECISIONS.md` — documented Admin Moderation Panel Scoping Strategy and Dynamic Code-Splitting of Recharts
 - [x] `PHASES.md` — this file
 
+## ✅ Phase 9 — Deployment Readiness & Production Polish (Done)
+
+**Goal:** Make the existing codebase 100% production-ready for deployment across Vercel (Next.js web) and Render/Railway (Express backend + Socket.io), including environment variable auditing, cross-origin cookie security (`sameSite: 'none'`, `secure: true`), Socket.io production CORS, deployment configuration scaffolding, dynamic SEO OpenGraph metadata, and full documentation updates.
+
+### Configuration & Deployment Scaffolding
+- [x] `apps/server/.env.example` & `apps/web/.env.example` — audited environment variables with zero client-side secret leaks
+- [x] `apps/server/src/index.ts` & `socket.ts` — updated Express and Socket.io CORS to dynamically accept `CLIENT_ORIGIN` (Vercel preview & production origins)
+- [x] `apps/server/src/routes/auth.ts` — updated refresh token cookie options: `sameSite: 'none'`, `secure: true` in production (`NODE_ENV === 'production'`)
+- [x] `apps/web/src/lib/socket.ts` — updated client connection URL computation to strip trailing `/api` paths
+- [x] `apps/server/Procfile` & `render.yaml` — added Render/Railway server build and start deployment scripts
+- [x] `apps/web/vercel.json` — added Vercel monorepo workspace build configuration
+
+### SEO & OpenGraph Social Sharing Metadata
+- [x] `apps/web/src/app/robots.ts` — Next.js dynamic `robots.txt` generator
+- [x] `apps/web/src/app/sitemap.ts` — Next.js dynamic `sitemap.xml` generator
+- [x] `apps/web/src/app/layout.tsx` — updated RootLayout with complete OpenGraph & Twitter Card metadata tags
+
+### Docs & README Pass
+- [x] `README.md` — complete overhaul with live deployment URL placeholders, tech stack badges, architecture details, local setup steps, pre-configured seed accounts, and explicit "Known Limitations & Scope" statement
+- [x] `DECISIONS.md` — documented Production Deployment Architecture & Cross-Origin Security
+- [x] `PHASES.md` — this file
+
 ---
 
-## 🎉 Project Complete — Phases 0-8 Fully Implemented!
-All core features, real-time Socket.io bidding engine, Mongoose models, Express REST APIs, RTK Query state management, Stripe test checkout flow, post-win fulfillment coordination, mutual handoff confirmation, in-app real-time chat, seller rating badges, admin moderation panel, MongoDB aggregation analytics, responsive UI, and performance optimizations are complete and verified.
+## 🎉 Project Complete — Phases 0-9 Fully Implemented & Production Ready!
+All feature phases (Phases 0 through 9) are fully built, tested, and verified. The codebase features a real-time Socket.io bidding engine with anti-sniping protection, atomic MongoDB concurrency control, JWT authentication with httpOnly refresh token rotation, Stripe checkout flow, post-win fulfillment coordination, mutual handoff confirmation, in-app messaging, verified seller review ratings, an admin moderation panel with MongoDB aggregation analytics, responsive dark-mode design system, dynamic code-splitting, SEO OpenGraph metadata, and cross-origin production deployment configuration.

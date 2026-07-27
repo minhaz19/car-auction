@@ -25,12 +25,34 @@ function getWatcherCount(carId: string): number {
 }
 
 export function initSocketServer(httpServer: HttpServer) {
+  const configuredOrigins = (process.env.CLIENT_ORIGIN || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+  const defaultAllowedOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    ...configuredOrigins,
+  ];
+
   io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>(httpServer, {
     cors: {
-      origin: [
-        'http://localhost:3000',
-        process.env.CLIENT_ORIGIN || 'http://localhost:3000',
-      ],
+      origin: (requestOrigin, callback) => {
+        if (!requestOrigin) {
+          callback(null, true);
+          return;
+        }
+        const isAllowed =
+          defaultAllowedOrigins.includes(requestOrigin) ||
+          requestOrigin.endsWith('.vercel.app');
+
+        if (isAllowed) {
+          callback(null, true);
+        } else {
+          callback(new Error(`Socket.io CORS policy: origin ${requestOrigin} not allowed`));
+        }
+      },
       credentials: true,
     },
   });

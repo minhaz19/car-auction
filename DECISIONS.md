@@ -106,6 +106,10 @@ Records *why* a choice was made, not just what was built. This is the file to re
 **Decision:** Code-split `AdminAnalyticsCharts` using `next/dynamic` (`ssr: false`), loading `recharts` only when navigating to `/admin`.
 **Why:** Recharts is a feature-rich visualization library. Dynamic importing ensures that regular buyers and sellers navigating public car listings, live auction rooms, and search pages do not download or parse charting Javascript bundle bytes, preserving sub-second page loads across the platform.
 
+## Production Deployment Architecture & Cross-Origin Security
+**Decision:** Deploy Next.js frontend on Vercel (`revbid.vercel.app`) and Express REST API + Socket.io server on Render/Railway (`revbid-api.onrender.com`), setting `sameSite: 'none'` and `secure: true` on HTTP-only refresh token cookies in production (`NODE_ENV === 'production'`).
+**Why:** Next.js App Router excels on Vercel's edge network for static generation and server-side rendering, while long-lived Socket.io WebSocket connections and background cron jobs require a persistent Node.js process host like Render or Railway. Configuring cross-origin cookie security (`sameSite: 'none'`, `secure: true`) and dynamic CORS origins guarantees seamless authentication and real-time WebSocket transport between separate production domains.
+
 ---
 
 ## Open / To Be Decided

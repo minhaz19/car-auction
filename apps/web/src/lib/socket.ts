@@ -1,7 +1,11 @@
 import { io, Socket } from 'socket.io-client';
 import type { ServerToClientEvents, ClientToServerEvents } from '@car-auction/shared';
 
-const SERVER_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const SOCKET_SERVER_URL =
+  process.env.NEXT_PUBLIC_SOCKET_URL ||
+  (process.env.NEXT_PUBLIC_API_URL
+    ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/?$/, '')
+    : 'http://localhost:5001');
 
 export type TypedClientSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -9,7 +13,7 @@ let socket: TypedClientSocket | null = null;
 
 export function getSocket(token?: string | null): TypedClientSocket {
   if (!socket) {
-    socket = io(SERVER_URL, {
+    socket = io(SOCKET_SERVER_URL, {
       autoConnect: false,
       withCredentials: true,
       auth: (cb) => {
