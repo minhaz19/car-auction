@@ -247,7 +247,33 @@
 - [x] `DECISIONS.md` — documented Transaction-Scoped In-App Threading and Mutual Confirmation Model decisions
 - [x] `PHASES.md` — this file
 
+## ✅ Phase 8 — Admin Panel, Moderation & Analytics (Done)
+
+**Goal:** Build a lean, functional Admin Control Panel with role enforcement (`requireRole('admin')`), listing moderation (force-close, suspend with logged reasons), user account suspension management, dispute queue adjudication, and MongoDB aggregation analytics visualized via code-split Recharts.
+
+### Shared & Backend (`packages/shared` & `apps/server`)
+- [x] `packages/shared/src/types/admin.ts` — shared interfaces for `AdminAnalyticsResponse`, `IAdminUser`, payload contracts
+- [x] `src/models/User.ts` — updated Mongoose schema with `status: 'active' | 'suspended'`
+- [x] `src/middleware/auth.ts` — updated `requireAuth` to verify account suspension status (`403 Forbidden`)
+- [x] `src/routes/admin.ts` — added `/api/admin/analytics` (MongoDB pipeline), `/api/admin/cars`, `/api/admin/users`, `/api/admin/disputes`
+- [x] `src/seed.ts` — seeded default admin user (`admin@revbid.com` / `AdminPass123!`)
+
+### Frontend (`apps/web`)
+- [x] `src/store/services/adminApi.ts` — RTK Query service for all `/api/admin/*` endpoints
+- [x] `src/components/admin/AdminNavbar.tsx` — navigation bar for admin views
+- [x] `src/components/admin/AdminTableRow.tsx` — dense reusable table row primitive
+- [x] `src/components/admin/AdminAnalyticsCharts.tsx` — code-split Recharts visualization (BarChart & PieChart)
+- [x] `src/app/admin/page.tsx` — Analytics Dashboard with stat cards + dynamic Recharts
+- [x] `src/app/admin/listings/page.tsx` — Listing Moderation view with filter controls & action modal
+- [x] `src/app/admin/users/page.tsx` — User Management view with Suspend/Reinstate toggle buttons
+- [x] `src/app/admin/disputes/page.tsx` — Dispute Queue Resolution view with adjudication modal
+
+### Docs
+- [x] `API.md` — updated with all `/api/admin/*` endpoints
+- [x] `DECISIONS.md` — documented Admin Moderation Panel Scoping Strategy and Dynamic Code-Splitting of Recharts
+- [x] `PHASES.md` — this file
+
 ---
 
-## 🎉 Project Complete — Phases 0-7 + Phase 6.5 Fully Implemented!
-All core features, real-time Socket.io bidding engine, Mongoose models, Express REST APIs, RTK Query state management, Stripe test checkout flow, post-win fulfillment coordination, mutual handoff confirmation, in-app real-time chat, seller rating badges, responsive UI, and performance optimizations are complete and verified.
+## 🎉 Project Complete — Phases 0-8 Fully Implemented!
+All core features, real-time Socket.io bidding engine, Mongoose models, Express REST APIs, RTK Query state management, Stripe test checkout flow, post-win fulfillment coordination, mutual handoff confirmation, in-app real-time chat, seller rating badges, admin moderation panel, MongoDB aggregation analytics, responsive UI, and performance optimizations are complete and verified.

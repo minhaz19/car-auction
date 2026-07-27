@@ -73,8 +73,23 @@ async function seed() {
         email: 'seller@revbid.dev',
         passwordHash,
         role: 'seller',
+        status: 'active',
       });
       console.log('👤 Created default seller user: seller@revbid.dev');
+    }
+
+    // Create or find default admin user
+    let admin = await User.findOne({ email: 'admin@revbid.com' });
+    if (!admin) {
+      const passwordHash = await bcrypt.hash('AdminPass123!', 10);
+      admin = await User.create({
+        name: 'System Admin',
+        email: 'admin@revbid.com',
+        passwordHash,
+        role: 'admin',
+        status: 'active',
+      });
+      console.log('👑 Created default admin user: admin@revbid.com (Password: AdminPass123!)');
     }
 
     // Clear existing cars

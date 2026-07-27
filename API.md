@@ -321,6 +321,78 @@ Returns public verified reviews, total review count, and average rating score fo
 
 ---
 
+## Admin Panel & Moderation — `/api/admin`
+
+All `/api/admin` endpoints require `Authorization: Bearer <accessToken>` with `role: 'admin'`.
+
+### `GET /api/admin/analytics`
+Returns platform aggregate metrics powered by MongoDB aggregation pipelines.
+
+**Response `200`**
+```json
+{
+  "totalActiveAuctions": 14,
+  "totalBidVolume": 1450000,
+  "totalUsers": 28,
+  "listingsByStatus": { "live": 14, "ended": 10, "upcoming": 4 },
+  "topBrands": [{ "brand": "Porsche", "count": 6 }]
+}
+```
+
+---
+
+### `GET /api/admin/cars`
+Returns all vehicle listings with seller details, accepting `status` and `search` filters.
+
+---
+
+### `PATCH /api/admin/cars/:id/status`
+Force-closes, suspends, or reactivates a car listing with a mandatory moderation reason log.
+
+**Body:**
+```json
+{
+  "status": "ended",
+  "reason": "Seller requested early closure due to local private sale."
+}
+```
+
+---
+
+### `GET /api/admin/users`
+Returns all user accounts with roles, account statuses (`active` | `suspended`), and join dates.
+
+---
+
+### `PATCH /api/admin/users/:id/suspend`
+Toggles user account suspension status. Suspended users are barred from bidding and listing cars.
+
+**Body:**
+```json
+{
+  "status": "suspended"
+}
+```
+
+---
+
+### `GET /api/admin/disputes`
+Lists all transactions flagged for support dispute.
+
+---
+
+### `PATCH /api/admin/disputes/:id/resolve`
+Adjudicates and resolves a transaction dispute.
+
+**Body:**
+```json
+{
+  "resolutionNotes": "Verified inspection documents; initiated seller payout release."
+}
+```
+
+---
+
 ### `GET /api/reviews/seller/:sellerId`
 Returns all verified post-transaction reviews and average rating score for a seller.
 

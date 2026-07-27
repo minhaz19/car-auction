@@ -1,4 +1,5 @@
 export type UserRole = 'buyer' | 'seller' | 'admin';
+export type UserAccountStatus = 'active' | 'suspended';
 
 /** Public-safe user shape — no passwordHash, no refreshTokens */
 export interface IUserPublic {
@@ -6,6 +7,7 @@ export interface IUserPublic {
   name: string;
   email: string;
   role: UserRole;
+  status?: UserAccountStatus;
   watchlist?: string[];
   createdAt: string;
 }

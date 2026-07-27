@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../config/jwt';
+import { User } from '../models/User';
 import type { UserRole } from '@car-auction/shared';
 
 /**
- * requireAuth — validates the Bearer access token.
- * Attaches req.user on success; returns 401 on failure.
+ * requireAuth — validates the Bearer access token and verifies active account status.
+ * Attaches req.user on success; returns 401/403 on failure.
  */
-export function requireAuth(req: Request, res: Response, next: NextFunction): void {
+export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith('Bearer ')) {
@@ -17,7 +18,26 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   const token = authHeader.slice(7);
 
   try {
-    req.user = verifyAccessToken(token);
+    const payload = verifyAccessToken(token);
+
+    // Verify user account is active and not suspended
+    const dbUser = await User.findById(payload.sub).select('status role');
+    if (!dbUser) {
+      res.status(401).json({ message: 'User account no longer exists' });
+      return;
+    }
+
+    if (dbUser.status === 'suspended') {
+      res.status(403).json({ message: 'Your account has been suspended by an administrator.' });
+      return;
+    }
+
+    // Keep payload role synchronized with DB
+    req.user = {
+      ...payload,
+      role: dbUser.role,
+    };
+
     next();
   } catch {
     res.status(401).json({ message: 'Access token is invalid or expired' });
@@ -27,9 +47,6 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
 /**
  * requireRole — role-based access control middleware factory.
  * Must be used after requireAuth.
- *
- * @example
- * router.post('/listing', requireAuth, requireRole('seller', 'admin'), handler)
  */
 export function requireRole(...roles: UserRole[]) {
   return (req: Request, res: Response, next: NextFunction): void => {

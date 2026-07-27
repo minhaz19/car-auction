@@ -1,11 +1,12 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import type { UserRole } from '@car-auction/shared';
+import type { UserRole, UserAccountStatus } from '@car-auction/shared';
 
 export interface IUser extends Document {
   name: string;
   email: string;
   passwordHash: string;
   role: UserRole;
+  status: UserAccountStatus;
   refreshTokens: string[];
   watchlist: mongoose.Types.ObjectId[];
   createdAt: Date;
@@ -37,6 +38,11 @@ const UserSchema = new Schema<IUser>(
       type: String,
       enum: ['buyer', 'seller', 'admin'] satisfies UserRole[],
       default: 'buyer',
+    },
+    status: {
+      type: String,
+      enum: ['active', 'suspended'],
+      default: 'active',
     },
     refreshTokens: {
       type: [String],

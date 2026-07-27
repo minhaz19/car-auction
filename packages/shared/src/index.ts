@@ -8,3 +8,4 @@ export * from './types/notification';
 export * from './types/transaction';
 export * from './types/message';
 export * from './types/review';
+export * from './types/admin';

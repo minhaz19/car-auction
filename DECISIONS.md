@@ -98,6 +98,14 @@ Records *why* a choice was made, not just what was built. This is the file to re
 **Decision:** Require explicit handoff confirmations from BOTH the buyer (`handoffConfirmedByBuyer`) AND the seller (`handoffConfirmedBySeller`) before transitioning transaction status to `completed` and releasing seller payout (`payoutStatus = 'initiated'`).
 **Why:** Unilateral completion mechanisms (where only the buyer or only the seller can mark a transaction closed) create high vulnerability to fraud and disputes — a seller could falsely mark a car handed off without delivering keys, or a buyer could take possession and refuse to mark it received to block payout. Dual confirmation guarantees agreement between both parties before financial settlement occurs.
 
+## Admin Moderation Panel Scoping Strategy
+**Decision:** Scope the Admin Panel as a lean, high-functionality moderation tool focusing on listing force-closure with required reason logging, user account suspension enforcement (`status: 'suspended'`), transaction dispute adjudication, and MongoDB aggregation analytics.
+**Why:** Portfolio auction applications often either omit administrative tooling entirely or attempt over-engineered, complex admin suites. Standardizing on dense primitive components (`AdminTableRow`) and server-side aggregation pipelines demonstrates production-grade moderation patterns without inflating bundle size or code bloat.
+
+## Dynamic Code-Splitting of Recharts Analytics Component
+**Decision:** Code-split `AdminAnalyticsCharts` using `next/dynamic` (`ssr: false`), loading `recharts` only when navigating to `/admin`.
+**Why:** Recharts is a feature-rich visualization library. Dynamic importing ensures that regular buyers and sellers navigating public car listings, live auction rooms, and search pages do not download or parse charting Javascript bundle bytes, preserving sub-second page loads across the platform.
+
 ---
 
 ## Open / To Be Decided
